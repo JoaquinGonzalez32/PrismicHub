@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baffé — Hub de contenido</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F4EF;
+    --bg2: #EEEAE2;
+    --surface: #FFFFFF;
+    --ink: #1A1714;
+    --ink2: #6B6560;
+    --ink3: #A39E99;
+    --accent: #C85A2A;
+    --accent2: #E8C9B8;
+    --green: #2E6B4F;
+    --green-bg: #E4EFE9;
+    --purple: #4A3F8A;
+    --purple-bg: #EDEAF8;
+    --pink: #9B3060;
+    --pink-bg: #F5E8EF;
+    --border: rgba(26,23,20,0.1);
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--ink);
+    color: #F7F4EF;
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    letter-spacing: -0.3px;
+  }
+  .logo span { color: var(--accent2); }
+  .header-meta { font-size: 12px; color: rgba(247,244,239,0.45); letter-spacing: 0.04em; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg2);
+    padding: 6px;
+    border-radius: 10px;
+    margin: 32px 40px 0;
+  }
+  .tab {
+    flex: 1;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink2);
+    background: none;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .tab.active {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .tab:hover:not(.active) { background: rgba(255,255,255,0.5); }
+
+  /* MAIN */
+  main { padding: 28px 40px 60px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .section-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 26px;
+    letter-spacing: -0.4px;
+  }
+  .section-count {
+    font-size: 12px;
+    color: var(--ink3);
+    background: var(--bg2);
+    padding: 3px 9px;
+    border-radius: 20px;
+  }
+
+  /* PILAR FILTER */
+  .pillar-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .pfilter {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: none;
+  }
+  .pfilter.all { border-color: var(--ink); color: var(--ink); }
+  .pfilter.all.active, .pfilter.all:hover { background: var(--ink); color: #F7F4EF; }
+  .pfilter.desc { border-color: var(--purple); color: var(--purple); }
+  .pfilter.desc.active, .pfilter.desc:hover { background: var(--purple); color: #fff; }
+  .pfilter.com { border-color: var(--green); color: var(--green); }
+  .pfilter.com.active, .pfilter.com:hover { background: var(--green); color: #fff; }
+  .pfilter.cul { border-color: var(--accent); color: var(--accent); }
+  .pfilter.cul.active, .pfilter.cul:hover { background: var(--accent); color: #fff; }
+  .pfilter.det { border-color: var(--pink); color: var(--pink); }
+  .pfilter.det.active, .pfilter.det:hover { background: var(--pink); color: #fff; }
+
+  /* CONTENT CARDS */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 14px;
+  }
+  .content-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+  .content-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+  .card-stripe {
+    height: 4px;
+  }
+  .card-body { padding: 16px 18px; }
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .pilar-tag {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .channel-tag {
+    font-size: 11px;
+    color: var(--ink3);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+  .format-tag {
+    font-size: 11px;
+    color: var(--ink3);
+  }
+  .card-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 16px;
+    margin-bottom: 8px;
+    line-height: 1.35;
+  }
+  .copy-preview {
+    font-size: 12.5px;
+    color: var(--ink2);
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: pre-wrap;
+  }
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .btn-action {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-action:hover { background: var(--bg2); }
+  .btn-action.primary {
+    background: var(--ink);
+    color: #F7F4EF;
+    border-color: var(--ink);
+  }
+  .btn-action.primary:hover { background: #3A3530; }
+  .comment-count {
+    font-size: 11px;
+    color: var(--ink3);
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,23,20,0.55);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.2s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 1;
+  }
+  .modal-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 20px;
+    line-height: 1.3;
+  }
+  .modal-close {
+    background: var(--bg2);
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink2);
+    margin-top: 2px;
+  }
+  .modal-close:hover { background: var(--bg); }
+  .modal-body { padding: 20px 24px; }
+
+  /* EDIT AREA */
+  .edit-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--ink3);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .edit-textarea {
+    width: 100%;
+    min-height: 200px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .edit-textarea:focus { border-color: var(--accent); }
+  .edit-note {
+    font-size: 12px;
+    color: var(--ink3);
+    font-style: italic;
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .save-btn {
+    margin-top: 14px;
+    padding: 9px 20px;
+    background: var(--ink);
+    color: #F7F4EF;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .save-btn:hover { background: #3A3530; }
+  .saved-msg {
+    display: inline-block;
+    font-size: 12px;
+    color: var(--green);
+    margin-left: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  /* COMMENTS */
+  .comments-section { margin-top: 24px; }
+  .comments-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink2);
+    margin-bottom: 14px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .comment-item {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 10px 13px;
+    margin-bottom: 8px;
+    border-left: 3px solid var(--border);
+  }
+  .comment-item.suggestion { border-left-color: var(--accent); }
+  .comment-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+  .comment-type {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 20px;
+  }
+  .type-comment { background: var(--bg2); color: var(--ink2); }
+  .type-suggestion { background: var(--accent2); color: var(--accent); }
+  .comment-date { font-size: 11px; color: var(--ink3); }
+  .comment-text { font-size: 13px; color: var(--ink); line-height: 1.55; }
+  .delete-comment {
+    float: right;
+    background: none;
+    border: none;
+    font-size: 15px;
+    color: var(--ink3);
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+  }
+  .delete-comment:hover { color: var(--accent); }
+
+  /* ADD COMMENT */
+  .add-comment {
+    margin-top: 12px;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+  .comment-type-selector {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .type-btn {
+    font-size: 12px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--ink2);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  .type-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent2); }
+  .comment-input {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 9px 12px;
+    resize: none;
+    min-height: 72px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .comment-input:focus { border-color: var(--accent); }
+  .submit-comment {
+    margin-top: 8px;
+    padding: 7px 18px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .submit-comment:hover { background: #B54E22; }
+
+  /* CALENDAR VIEW */
+  .cal-wrapper { overflow-x: auto; }
+  .cal-table {
+    width: 100%;
+    min-width: 700px;
+    border-collapse: separate;
+    border-spacing: 6px;
+  }
+  .cal-table th {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--ink3);
+    text-transform: uppercase;
+    padding: 6px 10px;
+    text-align: left;
+    background: var(--bg2);
+    border-radius: 6px;
+  }
+  .cal-table td {
+    vertical-align: top;
+    padding: 0;
+  }
+  .cal-week-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink3);
+    padding: 10px 8px 0;
+    white-space: nowrap;
+  }
+  .cal-cell-inner {
+    background: var(--surface);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    min-height: 90px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ink);
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+  }
+  .cal-cell-inner:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.07); }
+  .cal-cell-inner .pilar-tag { margin-bottom: 6px; display: inline-block; }
+
+  /* EMPTY */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ink3);
+    font-size: 14px;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    display: flex;
+    gap: 20px;
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+  .stat { text-align: center; flex: 1; }
+  .stat-num {
+    font-family: 'Instrument Serif', serif;
+    font-size: 24px;
+    color: var(--ink);
+  }
+  .stat-label { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    header { padding: 16px 20px; }
+    main { padding: 20px; }
+    .tabs { margin: 20px 20px 0; }
+    .cards-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Baffé <span>·</span> contenido</div>
+  <div class="header-meta">hub del equipo</div>
+</header>
+
+<div class="tabs" id="tabBar">
+  <button class="tab active" onclick="switchTab('ideas')">Ideas de contenido</button>
+  <button class="tab" onclick="switchTab('calendar')">Calendario</button>
+</div>
+
+<main>
+
+  <!-- IDEAS VIEW -->
+  <div class="view active" id="view-ideas">
+    <div id="statusBar" class="status-bar"></div>
+    <div class="section-header">
+      <h1 class="section-title">Todas las piezas</h1>
+      <span class="section-count" id="cardCount"></span>
+    </div>
+    <div class="pillar-filters">
+      <button class="pfilter all active" onclick="filterPilar('all', this)">Todos</button>
+      <button class="pfilter desc" onclick="filterPilar('desc', this)">Descubrimiento</button>
+      <button class="pfilter com" onclick="filterPilar('com', this)">Comunidad</button>
+      <button class="pfilter cul" onclick="filterPilar('cul', this)">Cultura Baffé</button>
+      <button class="pfilter det" onclick="filterPilar('det', this)">Detrás de escena</button>
+    </div>
+    <div class="cards-grid" id="cardsGrid"></div>
+  </div>
+
+  <!-- CALENDAR VIEW -->
+  <div class="view" id="view-calendar">
+    <div class="section-header">
+      <h1 class="section-title">Primer mes</h1>
+    </div>
+    <div class="cal-wrapper">
+      <table class="cal-table" id="calTable"></table>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <div id="modalMeta" style="margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <h2 class="modal-title" id="modalTitle"></h2>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="edit-label">Copy</div>
+      <textarea class="edit-textarea" id="editTextarea"></textarea>
+      <div class="edit-note" id="editNote"></div>
+      <div>
+        <button class="save-btn" onclick="saveEdit()">Guardar cambios</button>
+        <span class="saved-msg" id="savedMsg">✓ Guardado</span>
+      </div>
+      <div class="comments-section">
+        <div class="comments-title" id="commentsTitle">Comentarios y sugerencias</div>
+        <div id="commentsList"></div>
+        <div class="add-comment">
+          <div class="comment-type-selector">
+            <button class="type-btn active" id="btnComment" onclick="setCommentType('comment')">Comentario</button>
+            <button class="type-btn" id="btnSuggestion" onclick="setCommentType('suggestion')">Sugerencia</button>
+          </div>
+          <textarea class="comment-input" id="commentInput" placeholder="Escribí tu comentario o sugerencia..."></textarea>
+          <br>
+          <button class="submit-comment" onclick="submitComment()">Publicar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PILLAR_CONFIG = {
+  desc: { label: 'Descubrimiento', color: '#4A3F8A', bg: '#EDEAF8', stripe: '#4A3F8A' },
+  com:  { label: 'Comunidad',      color: '#2E6B4F', bg: '#E4EFE9', stripe: '#2E6B4F' },
+  cul:  { label: 'Cultura Baffé',  color: '#C85A2A', bg: '#F5E3D8', stripe: '#C85A2A' },
+  det:  { label: 'Detrás de escena', color: '#9B3060', bg: '#F5E8EF', stripe: '#9B3060' }
+};
+
+const INITIAL_CONTENT = [
+  {
+    id: 'det_launch_ig',
+    pilar: 'det',
+    channel: 'Instagram',
+    format: 'Post de feed',
+    title: 'Lanzamiento — historia del por qué',
+    copy: `Baffé está vivo.\n\nEmpezamos como todos: sentados en un bar que nos gustaba mucho y pensando "¿por qué es tan difícil encontrar lugares así?"\n\nNo el bar más instagrameable. No el más nuevo. El que tiene la luz justa, la música que no compite con la charla, el café que vale lo que cuesta.\n\nBaffé es el lugar donde vas a encontrar eso — y donde podés contarle al resto cuando lo encontrás vos.\n\nHoy está en sus primeros días. Y eso significa que lo que construyamos estos meses va a definir qué es.\n\nBajate la app. Buscá tu bar favorito. Si no está, agregalo.\n\n🔗 en bio.`,
+    note: 'Nota visual: foto tuya o del equipo en un bar, no una pantalla de la app. La app viene después — primero la persona.'
+  },
+  {
+    id: 'det_launch_tt',
+    pilar: 'det',
+    channel: 'TikTok',
+    format: 'Video 30–45 seg',
+    title: 'Lanzamiento — guión a cámara',
+    copy: `Guión hablado a cámara (en un bar):\n\n"Construí una app. No porque sea desarrollador — sino porque cada vez que quería encontrar un buen bar, terminaba preguntándole a alguien de confianza.\n\nGoogle te da el más reseñado. Instagram te da el más fotografiado. Pero ninguno te dice si la música está muy alta, si podés ir a charlar, si el café es bueno de verdad.\n\nAsí que armé Baffé. Una app donde la gente que sabe de bares, recomienda bares.\n\nEstá recién saliendo. Si te importa este tema tanto como a mí, bajatela."`,
+    note: 'Filmado en el bar, no en un estudio. Sin edición pesada. La autenticidad es el formato.'
+  },
+  {
+    id: 'det_venues_ig',
+    pilar: 'det',
+    channel: 'Instagram',
+    format: 'Story con link',
+    title: 'Atracción de locales',
+    copy: `¿Tenés un bar o café?\n\nEstamos sumando los primeros locales a Baffé — una app de descubrimiento donde la gente busca lugares para cada momento.\n\nNo te pedimos nada por ahora. Solo queremos conocer tu local y darte visibilidad frente a las personas que buscan exactamente lo que ofrecés.\n\nLos primeros locales en sumarse tienen acceso gratis por tiempo indefinido a todo lo que vamos a lanzar.\n\nEscribinos por DM o dejá tu mail acá 👇`,
+    note: 'El "gratis por tiempo indefinido" es el gancho real para etapa early. Nombralo explícito, no lo dejes implícito.'
+  },
+  {
+    id: 'det_venues_tt',
+    pilar: 'det',
+    channel: 'TikTok',
+    format: 'Video corto 20 seg',
+    title: 'Atracción de locales — guión',
+    copy: `Guión:\n\n"Si tenés un bar o café y querés que gente nueva te encuentre — esto es para vos.\n\nBaffé es una app donde la gente busca lugares para tomar algo, trabajar, salir. Estamos sumando los primeros locales ahora.\n\nLos que entran primero, entran gratis. Para siempre.\n\nLink en bio."`,
+    note: 'Filmado caminando por un bar vacío de día, o mostrando la app buscando un tipo de local. Directo al punto.'
+  },
+  {
+    id: 'det_recap_ig',
+    pilar: 'det',
+    channel: 'Instagram',
+    format: 'Carrusel',
+    title: 'Recap del primer mes — build in public',
+    copy: `Slide 1: "El primer mes de Baffé en números"\n\nSlide 2:\n[X] usuarios registrados\n[X] locales guardados\n[X] reseñas escritas\n[X] locales nuevos sugeridos por la comunidad\n\nSlide 3:\n"Lo que más nos sorprendió: [insight real]"\n\nSlide 4:\n"Lo que viene: [1 feature próximo]\nSi querés influir en cómo lo hacemos, escribinos."\n\nSlide 5:\n"Gracias a los que empezaron con nosotros.\nLos que entran ahora todavía son los primeros."`,
+    note: 'Aunque los números sean chicos, publicarlos genera credibilidad. Una app con 87 usuarios que muestra sus métricas transmite más confianza que una que no dice nada.'
+  },
+  {
+    id: 'det_app_notif',
+    pilar: 'det',
+    channel: 'En la app',
+    format: 'Notificación / banner',
+    title: 'Hitos dentro de la app',
+    copy: `Opción A — al llegar al usuario 100:\n"Ya somos 100 en Baffé. Gracias por estar desde el principio — esto lo construimos juntos."\n\nOpción B — al sumar el primer local confirmado:\n"Primer local oficial en Baffé: [Nombre del local]. Buscalos, guardalo, dejales una reseña."\n\nOpción C — pedido de feedback:\n"Llevás [X días] usando Baffé. ¿Qué es lo que más usás? ¿Qué te falta?\n[Botón: Contanos]"`,
+    note: 'Los mensajes dentro de la app son los más poderosos para sentido de comunidad. El usuario ya está adentro — solo necesita sentir que importa.'
+  },
+  {
+    id: 'det_feedback_ig',
+    pilar: 'det',
+    channel: 'Instagram',
+    format: 'Story encuesta',
+    title: 'Pedidos de feedback — 3 opciones',
+    copy: `Opción A:\n"Estamos decidiendo qué construir primero.\n¿Qué te importa más en Baffé?\n→ Mejores filtros de búsqueda\n→ Ver qué guardaron tus amigos"\n\nOpción B:\n"¿Cómo encontrás bares nuevos hoy?\n→ Me lo recomienda alguien\n→ Instagram / TikTok\n→ Google Maps\n→ No encuentro, siempre voy a los mismos"\n\nOpción C (para locales):\n"Si tuvieras un bar, ¿qué te importaría saber de tus clientes?\n→ Cuántos me buscaron en la app\n→ Qué dijeron en las reseñas\n→ En qué momento del día me visitan"`,
+    note: 'La opción C hace dos cosas: involucra a usuarios normales Y le muestra a locales que Baffé piensa en sus necesidades.'
+  },
+  {
+    id: 'desc_workplaces',
+    pilar: 'desc',
+    channel: 'Instagram',
+    format: 'Carrusel',
+    title: '3 cafés para trabajar',
+    copy: `"3 cafés para trabajar en [ciudad]"\n\nCarrusel con:\n— Foto del lugar\n— Nombre + barrio\n— Por qué funciona para trabajar (wifi, ruido, mesas)\n— Captura de cómo se ve en la app Baffé\n\nÚltimo slide: "Encontralos y muchos más en Baffé — link en bio"`,
+    note: 'Siempre terminar mostrando la app. El carrusel es el gancho, la app es el destino.'
+  },
+  {
+    id: 'desc_pov_tt',
+    pilar: 'desc',
+    channel: 'TikTok',
+    format: 'Reel POV',
+    title: 'POV: buscás bar para el viernes',
+    copy: `Formato POV con pantalla del celular:\n\n"POV: son las 6pm del viernes y todavía no saben a dónde van"\n\n[Mostrar la app: abrir Baffé, filtrar por zona + vibe + horario]\n[Encontrar 3 opciones, guardar una]\n\nTexto final: "ya no hay excusa para el 'no sé a dónde ir'"`,
+    note: 'Lo más importante: mostrar el flujo real de búsqueda en la app. Que se vea simple y rápido.'
+  },
+  {
+    id: 'com_survey',
+    pilar: 'com',
+    channel: 'TikTok',
+    format: 'Encuesta + demo',
+    title: '¿Bar con música o sin?',
+    copy: `"¿Bar con música o sin música de fondo?\n\n[mostrar cómo filtrar eso exactamente en Baffé]\n\nNosotros somos team sin música — ¿y vos?"\n\nTexto encuesta en TikTok:\n→ Con música\n→ Sin música`,
+    note: 'El debate es el formato. La demo del filtro es el producto. Uno lleva al otro.'
+  },
+  {
+    id: 'com_ugc',
+    pilar: 'com',
+    channel: 'Instagram',
+    format: 'Repost',
+    title: 'Primer usuario que comparte',
+    copy: `Cuando alguien comparta una reseña o recomendación de Baffé en sus redes:\n\nRepostearlo con texto:\n"Esto es exactamente para lo que construimos Baffé. Gracias [usuario] — ya está en el feed para que todos lo vean."\n\nSi nadie lo hace orgánicamente la primera semana: pedirlo directamente a alguien del equipo o círculo cercano.`,
+    note: 'El primer UGC es un hito. Tratarlo como tal le manda la señal a otros usuarios de que compartir tiene visibilidad.'
+  },
+  {
+    id: 'com_suggest',
+    pilar: 'com',
+    channel: 'Instagram',
+    format: 'Story / post',
+    title: 'Sugerí un local que falta',
+    copy: `"¿Hay algún bar o café que amás y que no encontrás en Baffé?\n\nContanos cuál es — lo sumamos esta semana.\n\n(Y sí, cuando esté vas a ser el primero en saber.)"`,
+    note: 'Este contenido hace dos cosas: involucra a usuarios y te da leads de locales para contactar.'
+  },
+  {
+    id: 'cul_ranking',
+    pilar: 'cul',
+    channel: 'Instagram',
+    format: 'Carrusel',
+    title: 'El mejor café con leche de la ciudad',
+    copy: `"El mejor café con leche de [ciudad] — según nosotros.\n\n[Ranking de 5 lugares con foto, nombre, barrio, descripción de una línea]\n\nDiscutible. Intencional. ¿Con cuál no estás de acuerdo?"\n\nLast slide: "Todos están en Baffé. Guardá los que te gusten."`,
+    note: 'Los rankings propios posicionan a Baffé como voz de autoridad. Tienen que ser con criterio real, no neutros.'
+  },
+  {
+    id: 'cul_trending',
+    pilar: 'cul',
+    channel: 'En la app',
+    format: 'Lista curada',
+    title: 'Los más guardados de la semana',
+    copy: `Lista curada semanal dentro de la app:\n\n"Los 5 locales más guardados esta semana"\n\n— Nombre del local\n— Barrio\n— Por qué está en tendencia (si hay contexto)\n\nActualizarla cada lunes.`,
+    note: 'Este es el contenido que hace que abrir la app tenga novedad constante. Es el equivalente al "trending" de cualquier plataforma.'
+  }
+];
+
+const CALENDAR_DATA = [
+  {
+    week: 'S1',
+    cells: [
+      { pilar: 'desc', title: '"3 cafés para trabajar" — carrusel con capturas de la app', channel: 'Instagram' },
+      { pilar: 'desc', title: 'POV: buscás bar para el viernes. Flujo de búsqueda en la app', channel: 'TikTok' },
+      { pilar: 'com', title: 'Primer post en el feed: "¿Cuál es tu bar favorito? Buscalo acá"', channel: 'En la app' },
+      { pilar: 'det', title: 'Stories: "Baffé está en vivo — esto es lo que podés hacer hoy"', channel: 'Instagram' }
+    ]
+  },
+  {
+    week: 'S2',
+    cells: [
+      { pilar: 'cul', title: '"El mejor café con leche de [ciudad] según nosotros" — ranking propio', channel: 'Instagram' },
+      { pilar: 'com', title: '"¿Bar con música o sin?" — encuesta + demo del filtro en la app', channel: 'TikTok' },
+      { pilar: 'com', title: 'Push: "Sé el primero en reseñar este local"', channel: 'En la app' },
+      { pilar: 'det', title: '"¿Tenés un bar o café? Queremos conocerlo" — imán para locales', channel: 'Instagram' }
+    ]
+  },
+  {
+    week: 'S3',
+    cells: [
+      { pilar: 'com', title: 'Repost del primer usuario que comparte una reseña o recomendación', channel: 'Instagram' },
+      { pilar: 'desc', title: '"Bares para cada mood" — video mostrando cómo Baffé los organiza', channel: 'TikTok' },
+      { pilar: 'cul', title: 'Lista curada: "los 5 locales más guardados esta semana"', channel: 'En la app' },
+      { pilar: 'com', title: 'Pedido abierto: "Sugerinos un local que todavía no está en la app"', channel: 'Instagram' }
+    ]
+  },
+  {
+    week: 'S4',
+    cells: [
+      { pilar: 'cul', title: '"Lo más buscado del mes en Baffé" — primer dato real de la comunidad', channel: 'Instagram' },
+      { pilar: 'det', title: 'Mini recap del mes: usuarios, reseñas, locales. Build in public.', channel: 'TikTok' },
+      { pilar: 'com', title: 'Notificación: "Gracias por el primer mes — esto construyeron juntos"', channel: 'En la app' },
+      { pilar: 'desc', title: 'Collab o mención con alguien del nicho local para amplificar', channel: 'Instagram' }
+    ]
+  }
+];
+
+let currentCardId = null;
+let currentCommentType = 'comment';
+
+function getStorage() {
+  try {
+    const d = localStorage.getItem('baffe_content_v1');
+    return d ? JSON.parse(d) : { edits: {}, comments: {} };
+  } catch(e) { return { edits: {}, comments: {} }; }
+}
+function setStorage(data) {
+  try { localStorage.setItem('baffe_content_v1', JSON.stringify(data)); } catch(e) {}
+}
+
+function getContent(id) {
+  const s = getStorage();
+  const base = INITIAL_CONTENT.find(c => c.id === id);
+  if (!base) return null;
+  return { ...base, copy: s.edits[id] || base.copy };
+}
+
+function pillarTag(pilar) {
+  const p = PILLAR_CONFIG[pilar];
+  return `<span class="pilar-tag" style="background:${p.bg};color:${p.color}">${p.label}</span>`;
+}
+
+function renderCards(filterPilarVal) {
+  const grid = document.getElementById('cardsGrid');
+  const s = getStorage();
+  let items = INITIAL_CONTENT;
+  if (filterPilarVal !== 'all') items = items.filter(c => c.pilar === filterPilarVal);
+
+  document.getElementById('cardCount').textContent = items.length + ' piezas';
+
+  const totalComments = Object.values(s.comments).reduce((a, b) => a + b.length, 0);
+  const totalEdits = Object.keys(s.edits).length;
+  document.getElementById('statusBar').innerHTML = `
+    <div class="stat"><div class="stat-num">${INITIAL_CONTENT.length}</div><div class="stat-label">piezas de contenido</div></div>
+    <div class="stat"><div class="stat-num">${totalEdits}</div><div class="stat-label">ediciones del equipo</div></div>
+    <div class="stat"><div class="stat-num">${totalComments}</div><div class="stat-label">comentarios y sugerencias</div></div>
+    <div class="stat"><div class="stat-num">${Object.keys(PILLAR_CONFIG).length}</div><div class="stat-label">pilares</div></div>
+  `;
+
+  grid.innerHTML = items.map(item => {
+    const p = PILLAR_CONFIG[item.pilar];
+    const copy = s.edits[item.id] || item.copy;
+    const comments = s.comments[item.id] || [];
+    const edited = s.edits[item.id] ? '<span style="font-size:11px;color:var(--accent);margin-left:6px;">editado</span>' : '';
+    return `
+      <div class="content-card" data-pilar="${item.pilar}">
+        <div class="card-stripe" style="background:${p.stripe}"></div>
+        <div class="card-body">
+          <div class="card-meta">
+            ${pillarTag(item.pilar)}
+            <span class="channel-tag">${item.channel}</span>
+            <span class="format-tag">${item.format}</span>
+          </div>
+          <h3 class="card-title">${item.title}${edited}</h3>
+          <p class="copy-preview">${copy}</p>
+        </div>
+        <div class="card-actions">
+          <button class="btn-action" onclick="openModal('${item.id}')">Ver y editar</button>
+          <button class="btn-action" onclick="openModalComments('${item.id}')">Comentar</button>
+          <span class="comment-count">${comments.length > 0 ? `💬 ${comments.length}` : ''}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCalendar() {
+  const table = document.getElementById('calTable');
+  const headers = ['', 'Instagram', 'TikTok', 'En la app', 'Acción extra'];
+  table.innerHTML = `
+    <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>
+      ${CALENDAR_DATA.map(row => `
+        <tr>
+          <td><div class="cal-week-label">${row.week}</div></td>
+          ${row.cells.map(cell => {
+            const p = PILLAR_CONFIG[cell.pilar];
+            return `<td><div class="cal-cell-inner">
+              <span class="pilar-tag" style="background:${p.bg};color:${p.color};font-size:10px;">${p.label}</span><br>
+              ${cell.title}
+            </div></td>`;
+          }).join('')}
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+}
+
+function filterPilar(val, btn) {
+  document.querySelectorAll('.pfilter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCards(val);
+}
+
+function openModal(id, focusComments) {
+  const item = getContent(id);
+  if (!item) return;
+  currentCardId = id;
+  const s = getStorage();
+  const p = PILLAR_CONFIG[item.pilar];
+
+  document.getElementById('modalMeta').innerHTML =
+    pillarTag(item.pilar) +
+    `<span class="channel-tag">${item.channel}</span>` +
+    `<span class="format-tag">${item.format}</span>`;
+  document.getElementById('modalTitle').textContent = item.title;
+  document.getElementById('editTextarea').value = item.copy;
+  document.getElementById('editNote').textContent = item.note || '';
+  document.getElementById('savedMsg').style.opacity = '0';
+
+  renderComments(id);
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  if (focusComments) {
+    setTimeout(() => {
+      document.getElementById('commentInput').scrollIntoView({ behavior: 'smooth' });
+    }, 300);
+  }
+}
+
+function openModalComments(id) { openModal(id, true); }
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  currentCardId = null;
+  renderCards(document.querySelector('.pfilter.active').getAttribute('onclick').match(/'(\w+)'/)[1]);
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+function saveEdit() {
+  const s = getStorage();
+  s.edits[currentCardId] = document.getElementById('editTextarea').value;
+  setStorage(s);
+  const msg = document.getElementById('savedMsg');
+  msg.style.opacity = '1';
+  setTimeout(() => { msg.style.opacity = '0'; }, 2000);
+}
+
+function renderComments(id) {
+  const s = getStorage();
+  const comments = s.comments[id] || [];
+  const list = document.getElementById('commentsList');
+  const title = document.getElementById('commentsTitle');
+  title.textContent = `Comentarios y sugerencias (${comments.length})`;
+
+  if (comments.length === 0) {
+    list.innerHTML = '<p style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Todavía no hay comentarios. Sé el primero.</p>';
+    return;
+  }
+  list.innerHTML = comments.map((c, i) => `
+    <div class="comment-item ${c.type === 'suggestion' ? 'suggestion' : ''}">
+      <button class="delete-comment" onclick="deleteComment(${i})" title="Eliminar">×</button>
+      <div class="comment-meta">
+        <span class="comment-type ${c.type === 'suggestion' ? 'type-suggestion' : 'type-comment'}">${c.type === 'suggestion' ? 'Sugerencia' : 'Comentario'}</span>
+        <span class="comment-date">${c.date}</span>
+      </div>
+      <p class="comment-text">${c.text}</p>
+    </div>
+  `).join('');
+}
+
+function setCommentType(type) {
+  currentCommentType = type;
+  document.getElementById('btnComment').classList.toggle('active', type === 'comment');
+  document.getElementById('btnSuggestion').classList.toggle('active', type === 'suggestion');
+}
+
+function submitComment() {
+  const input = document.getElementById('commentInput');
+  const text = input.value.trim();
+  if (!text || !currentCardId) return;
+  const s = getStorage();
+  if (!s.comments[currentCardId]) s.comments[currentCardId] = [];
+  s.comments[currentCardId].push({
+    type: currentCommentType,
+    text: text,
+    date: new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  });
+  setStorage(s);
+  input.value = '';
+  renderComments(currentCardId);
+}
+
+function deleteComment(index) {
+  const s = getStorage();
+  s.comments[currentCardId].splice(index, 1);
+  setStorage(s);
+  renderComments(currentCardId);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['ideas','calendar'][i] === name));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+}
+
+renderCards('all');
+renderCalendar();
+</script>
+</body>
+</html>
