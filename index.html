@@ -303,6 +303,34 @@ body::before {
 }
 .sort-btn svg { width: 12px; height: 12px; }
 
+.sort-dir-btn {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 6px 12px 6px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 4px;
+}
+.sort-dir-btn:hover {
+  border-style: solid;
+  border-color: var(--ink-muted);
+  color: var(--ink);
+}
+.sort-dir-icon {
+  width: 13px;
+  height: 13px;
+  transition: transform var(--transition);
+}
+.sort-dir-btn.asc .sort-dir-icon { transform: rotate(180deg); }
+
 /* ─── Grid group header (sort by pilar) ─── */
 .grid-group-header {
   grid-column: 1 / -1;
@@ -1166,6 +1194,10 @@ body::before {
       <button class="sort-btn active" data-sort="publication">Fecha de publicación</button>
       <button class="sort-btn" data-sort="creation">Fecha de creación</button>
       <button class="sort-btn" data-sort="pilar">Agrupar por pilar</button>
+      <button class="sort-dir-btn" id="sort-dir-btn" title="Cambiar dirección del orden">
+        <svg class="sort-dir-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        <span class="sort-dir-label">Descendente</span>
+      </button>
     </div>
 
     <div class="content-grid" id="content-grid"></div>
@@ -1379,6 +1411,10 @@ let editsCount = 0;
 let totalComments = 0;
 let currentFilter = 'all';
 let currentSort = 'publication'; // 'publication' | 'creation' | 'pilar'
+// Defaults por modo: publicación = próxima primero (asc),
+// creación = más reciente primero (desc), pilar = asc dentro del grupo.
+const SORT_DEFAULT_DIR = { publication: 'asc', creation: 'desc', pilar: 'asc' };
+let currentSortDir = SORT_DEFAULT_DIR.publication; // 'asc' | 'desc'
 let currentCommentType = 'comment';
 let currentPieceId = null;
 let calendarYear = new Date().getFullYear();
@@ -1636,15 +1672,34 @@ function bindFilterEvents() {
   if (openBtn) openBtn.addEventListener('click', openPillarsModal);
 }
 
+function updateSortDirUi() {
+  const btn = document.getElementById('sort-dir-btn');
+  if (!btn) return;
+  btn.classList.toggle('asc', currentSortDir === 'asc');
+  btn.querySelector('.sort-dir-label').textContent =
+    currentSortDir === 'asc' ? 'Ascendente' : 'Descendente';
+}
+
 function bindSortEvents() {
   document.querySelectorAll('#sort-bar .sort-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#sort-bar .sort-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentSort = btn.dataset.sort;
+      currentSortDir = SORT_DEFAULT_DIR[currentSort] || 'desc';
+      updateSortDirUi();
       renderGrid();
     });
   });
+  const dirBtn = document.getElementById('sort-dir-btn');
+  if (dirBtn) {
+    dirBtn.addEventListener('click', () => {
+      currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+      updateSortDirUi();
+      renderGrid();
+    });
+  }
+  updateSortDirUi();
 }
 
 /* ─── Render Cards ─── */
@@ -1679,16 +1734,19 @@ function renderCardHtml(piece, i) {
 function sortByPublication(a, b) {
   const da = a.scheduled_date, db = b.scheduled_date;
   if (!da && !db) return (b.id || 0) - (a.id || 0);
-  if (!da) return 1;   // sin fecha al final
+  if (!da) return 1;   // sin fecha siempre al final
   if (!db) return -1;
-  return da.localeCompare(db); // ascendente (más próximo primero)
+  const cmp = da.localeCompare(db);
+  return currentSortDir === 'asc' ? cmp : -cmp;
 }
 
 function sortByCreation(a, b) {
   // created_at si existe, sino id
   const ca = a.created_at || '', cb = b.created_at || '';
-  if (ca && cb) return cb.localeCompare(ca); // descendente (más reciente primero)
-  return (b.id || 0) - (a.id || 0);
+  let cmp;
+  if (ca && cb) cmp = ca.localeCompare(cb);
+  else cmp = (a.id || 0) - (b.id || 0);
+  return currentSortDir === 'asc' ? cmp : -cmp;
 }
 
 function renderGrid() {
