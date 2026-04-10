@@ -998,10 +998,23 @@ body::before {
       <button class="modal-close" id="modal-close">&times;</button>
     </div>
     <div class="modal-content">
-      <h2 class="modal-title" id="modal-title"></h2>
-      <div class="modal-meta">
-        <span id="modal-channel"></span>
-        <span id="modal-format"></span>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Título</label>
+        <input type="text" id="modal-title-input" style="font-family:var(--font-display);font-size:1.4rem;font-weight:400;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);width:100%;outline:none;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="form-group">
+          <label>Pilar</label>
+          <select id="modal-pilar-select" style="font-family:var(--font-body);font-size:0.88rem;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);width:100%;outline:none;"></select>
+        </div>
+        <div class="form-group">
+          <label>Canal</label>
+          <select id="modal-channel-select" style="font-family:var(--font-body);font-size:0.88rem;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);width:100%;outline:none;"></select>
+        </div>
+        <div class="form-group">
+          <label>Formato</label>
+          <select id="modal-format-select" style="font-family:var(--font-body);font-size:0.88rem;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);width:100%;outline:none;"></select>
+        </div>
       </div>
 
       <div class="modal-section">
@@ -1440,18 +1453,36 @@ async function openModal(id, focus) {
   if (!piece) return;
   currentPieceId = id;
 
+  // Pilar tag header
   const color = pilarStyle(piece.pilar, 'color') || '#999';
   const bg = pilarStyle(piece.pilar, 'bg') || '#f0f0f0';
   const label = pilarStyle(piece.pilar, 'label') || piece.pilar;
-
   const tag = document.getElementById('modal-tag');
   tag.textContent = label;
   tag.style.background = bg;
   tag.style.color = color;
 
-  document.getElementById('modal-title').textContent = piece.title;
-  document.getElementById('modal-channel').textContent = piece.channel;
-  document.getElementById('modal-format').textContent = piece.format;
+  // Title
+  document.getElementById('modal-title-input').value = piece.title;
+
+  // Pilar select
+  const pilarSel = document.getElementById('modal-pilar-select');
+  pilarSel.innerHTML = Object.entries(PILARS).map(([key, p]) =>
+    `<option value="${key}"${key === piece.pilar ? ' selected' : ''}>${escapeHtml(p.label)}</option>`
+  ).join('');
+
+  // Channel select
+  const chSel = document.getElementById('modal-channel-select');
+  chSel.innerHTML = CHANNELS_LIST.map(c =>
+    `<option value="${escapeHtml(c)}"${c === piece.channel ? ' selected' : ''}>${escapeHtml(c)}</option>`
+  ).join('');
+
+  // Format select
+  const fmtSel = document.getElementById('modal-format-select');
+  fmtSel.innerHTML = FORMATS_LIST.map(f =>
+    `<option value="${escapeHtml(f)}"${f === piece.format ? ' selected' : ''}>${escapeHtml(f)}</option>`
+  ).join('');
+
   document.getElementById('modal-copy').value = piece.copy;
   document.getElementById('modal-date').value = piece.scheduled_date || '';
 
@@ -1512,10 +1543,20 @@ function renderComments(comments) {
 async function saveCopy() {
   if (!currentPieceId) return;
   const piece = getPiece(currentPieceId);
+  const newTitle = document.getElementById('modal-title-input').value.trim();
+  const newPilar = document.getElementById('modal-pilar-select').value;
+  const newChannel = document.getElementById('modal-channel-select').value;
+  const newFormat = document.getElementById('modal-format-select').value;
   const newCopy = document.getElementById('modal-copy').value;
   const newDate = document.getElementById('modal-date').value || null;
 
+  if (!newTitle) { alert('El título no puede estar vacío.'); return; }
+
   const updates = {};
+  if (newTitle !== piece.title) updates.title = newTitle;
+  if (newPilar !== piece.pilar) updates.pilar = newPilar;
+  if (newChannel !== piece.channel) updates.channel = newChannel;
+  if (newFormat !== piece.format) updates.format = newFormat;
   if (newCopy !== piece.copy) updates.copy = newCopy;
   if (newDate !== (piece.scheduled_date || null)) updates.scheduled_date = newDate;
 
@@ -1523,8 +1564,7 @@ async function saveCopy() {
     updates.updated_at = new Date().toISOString();
     const { error } = await sb.from('content_pieces').update(updates).eq('id', currentPieceId);
     if (!error) {
-      if (updates.copy) piece.copy = updates.copy;
-      piece.scheduled_date = newDate;
+      Object.assign(piece, updates);
       await incrementEdits();
       renderGrid();
       renderCalendar();
