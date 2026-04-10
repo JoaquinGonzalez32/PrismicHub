@@ -631,6 +631,20 @@ body::before {
 .ideas-view.active { display: block; }
 .ideas-view { display: none; }
 
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.cal-month-label {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
 .calendar-wrapper {
   overflow-x: auto;
   border-radius: var(--radius-lg);
@@ -782,6 +796,38 @@ body::before {
   color: var(--accent);
 }
 
+.settings-section-title {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-muted);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.simple-list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.simple-list-row:last-of-type { border-bottom: none; }
+.simple-list-input {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
+}
+.simple-list-input:focus { outline: none; border-color: var(--accent); }
+
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
   .header-inner { padding: 0 20px; height: 60px; }
@@ -926,15 +972,16 @@ body::before {
 
   <!-- ─── Calendar View ─── -->
   <section class="calendar-view" id="view-calendar">
+    <div class="cal-nav">
+      <button class="btn btn-outline" id="cal-prev">&larr; Anterior</button>
+      <h2 class="cal-month-label" id="cal-month-label"></h2>
+      <button class="btn btn-outline" id="cal-next">Siguiente &rarr;</button>
+    </div>
     <div class="calendar-wrapper">
       <table class="calendar-table" id="calendar-table">
-        <thead>
+        <thead id="calendar-thead">
           <tr>
             <th style="width:140px">Semana</th>
-            <th>Instagram</th>
-            <th>TikTok</th>
-            <th>Web / Blog</th>
-            <th>Email</th>
           </tr>
         </thead>
         <tbody id="calendar-body"></tbody>
@@ -975,6 +1022,11 @@ body::before {
       <div class="modal-section" id="modal-note-section">
         <div class="modal-section-label">Nota visual / producción</div>
         <div class="modal-note" id="modal-note"></div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">Fecha programada</div>
+        <input type="date" id="modal-date" style="font-family:var(--font-body);font-size:0.88rem;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);outline:none;width:200px;">
       </div>
 
       <div class="modal-save-row">
@@ -1018,24 +1070,11 @@ body::before {
           </div>
           <div class="form-group">
             <label>Canal</label>
-            <select id="new-idea-channel">
-              <option value="Instagram">Instagram</option>
-              <option value="TikTok">TikTok</option>
-              <option value="Website/Blog">Website / Blog</option>
-              <option value="Email">Email</option>
-            </select>
+            <select id="new-idea-channel"></select>
           </div>
           <div class="form-group">
             <label>Formato</label>
-            <select id="new-idea-format">
-              <option value="Post">Post</option>
-              <option value="Carrusel">Carrusel</option>
-              <option value="Story">Story</option>
-              <option value="Video">Video</option>
-              <option value="UGC Repost">UGC Repost</option>
-              <option value="Artículo">Artículo</option>
-              <option value="Newsletter">Newsletter</option>
-            </select>
+            <select id="new-idea-format"></select>
           </div>
         </div>
         <div class="form-group">
@@ -1046,6 +1085,10 @@ body::before {
           <label>Nota visual / producción (opcional)</label>
           <textarea id="new-idea-note" placeholder="Indicaciones de diseño, foto, video..." style="min-height:70px"></textarea>
         </div>
+        <div class="form-group">
+          <label>Fecha programada (opcional)</label>
+          <input type="date" id="new-idea-date" style="width:200px">
+        </div>
         <div class="modal-save-row">
           <button class="btn btn-outline" id="new-idea-cancel">Cancelar</button>
           <button class="btn btn-primary" id="new-idea-save">Crear idea</button>
@@ -1055,14 +1098,16 @@ body::before {
   </div>
 </div>
 
-<!-- ═══ Pillars Modal ═══ -->
+<!-- ═══ Settings Modal (Pillars, Channels, Formats) ═══ -->
 <div class="modal-overlay" id="pillars-overlay">
-  <div class="modal" style="max-width:540px">
+  <div class="modal" style="max-width:580px">
     <div class="modal-header">
-      <span class="modal-section-label" style="padding:0;margin:0">Gestionar pilares</span>
+      <span class="modal-section-label" style="padding:0;margin:0">Configuración del hub</span>
       <button class="modal-close" id="pillars-close">&times;</button>
     </div>
     <div class="pillars-modal-content">
+      <!-- Pilares -->
+      <div class="settings-section-title">Pilares de contenido</div>
       <div id="pillars-list"></div>
       <div class="add-pillar-row">
         <button class="add-pillar-btn" id="add-pillar-btn">
@@ -1070,9 +1115,30 @@ body::before {
           Agregar pilar
         </button>
       </div>
-      <div class="modal-save-row" style="margin-top:20px;margin-bottom:0">
+
+      <!-- Canales -->
+      <div class="settings-section-title" style="margin-top:24px">Canales</div>
+      <div id="channels-list"></div>
+      <div class="add-pillar-row">
+        <button class="add-pillar-btn" id="add-channel-btn">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Agregar canal
+        </button>
+      </div>
+
+      <!-- Formatos -->
+      <div class="settings-section-title" style="margin-top:24px">Formatos</div>
+      <div id="formats-list"></div>
+      <div class="add-pillar-row">
+        <button class="add-pillar-btn" id="add-format-btn">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Agregar formato
+        </button>
+      </div>
+
+      <div class="modal-save-row" style="margin-top:24px;margin-bottom:0">
         <button class="btn btn-outline" id="pillars-cancel">Cancelar</button>
-        <button class="btn btn-primary" id="pillars-save">Guardar</button>
+        <button class="btn btn-primary" id="pillars-save">Guardar todo</button>
       </div>
     </div>
   </div>
@@ -1088,55 +1154,20 @@ const SUPABASE_URL = 'https://uekourtwsiibnsnxvbvv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVla291cnR3c2lpYm5zbnh2YnZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MzMzNzAsImV4cCI6MjA5MTQwOTM3MH0.GLYVstjVuPnGThZoh1gkJC2y57RN9YksGNRBVxAbGG4';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const CALENDAR_DATA = [
-  {
-    label: 'Semana 1', dates: '14 – 20 Abr',
-    instagram: [{ id: 13, pilar: 'look', title: 'Lanzamiento nueva colección' }],
-    tiktok: [{ id: 2, pilar: 'street', title: 'POV: armás un outfit en 60 seg' }],
-    web: [{ id: 14, pilar: 'street', title: 'El básico perfecto existe' }],
-    email: [{ id: 11, pilar: 'look', title: 'Los más vendidos de la semana' }]
-  },
-  {
-    label: 'Semana 2', dates: '21 – 27 Abr',
-    instagram: [
-      { id: 1, pilar: 'look', title: 'Essentials que nunca pasan de moda' },
-      { id: 3, pilar: 'stitch', title: 'Cómo elegimos nuestras telas' }
-    ],
-    tiktok: [{ id: 5, pilar: 'street', title: 'Tendencias urbanas: lo que viene' }],
-    web: [], email: []
-  },
-  {
-    label: 'Semana 3', dates: '28 Abr – 4 May',
-    instagram: [
-      { id: 9, pilar: 'street', title: 'Prisimic x Street: collab reveal' },
-      { id: 4, pilar: 'comm', title: 'Tu outfit Prisimic del día' }
-    ],
-    tiktok: [
-      { id: 7, pilar: 'comm', title: 'Outfit check: nuestro equipo' },
-      { id: 10, pilar: 'stitch', title: 'De la tela al perchero' }
-    ],
-    web: [{ id: 8, pilar: 'look', title: 'Guía de estilo: oversize vs fitted' }],
-    email: []
-  },
-  {
-    label: 'Semana 4', dates: '5 – 11 May',
-    instagram: [
-      { id: 6, pilar: 'stitch', title: 'El proceso detrás del nuevo drop' },
-      { id: 12, pilar: 'comm', title: 'Compartí tu look #PrismicStyle' }
-    ],
-    tiktok: [], web: [],
-    email: [{ id: 11, pilar: 'look', title: 'Los más vendidos de la semana' }]
-  }
-];
-
+const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 /* ─── State ─── */
 let PILARS = {};
+let CHANNELS_LIST = [];
+let FORMATS_LIST = [];
 let contentPieces = [];
 let editsCount = 0;
 let totalComments = 0;
 let currentFilter = 'all';
 let currentCommentType = 'comment';
 let currentPieceId = null;
+let calendarYear = new Date().getFullYear();
+let calendarMonth = new Date().getMonth();
 
 /* ─── Supabase: Pillars ─── */
 async function fetchPillars() {
@@ -1154,6 +1185,37 @@ async function upsertPillar(key, label, color, bg) {
 async function deletePillar(key) {
   const { error } = await sb.from('pillars').delete().eq('key', key);
   if (error) console.error('Error deleting pillar:', error);
+}
+
+/* ─── Supabase: Channels ─── */
+async function fetchChannels() {
+  const { data, error } = await sb.from('channels').select('*').order('id');
+  if (error) { console.error('Error fetching channels:', error); return; }
+  CHANNELS_LIST = data.map(c => c.name);
+}
+
+async function syncChannels(names) {
+  // Delete all and re-insert
+  await sb.from('channels').delete().neq('id', 0);
+  if (names.length) {
+    await sb.from('channels').insert(names.map(n => ({ name: n })));
+  }
+  CHANNELS_LIST = [...names];
+}
+
+/* ─── Supabase: Formats ─── */
+async function fetchFormats() {
+  const { data, error } = await sb.from('formats').select('*').order('id');
+  if (error) { console.error('Error fetching formats:', error); return; }
+  FORMATS_LIST = data.map(f => f.name);
+}
+
+async function syncFormats(names) {
+  await sb.from('formats').delete().neq('id', 0);
+  if (names.length) {
+    await sb.from('formats').insert(names.map(n => ({ name: n })));
+  }
+  FORMATS_LIST = [...names];
 }
 
 /* ─── Supabase: Content ─── */
@@ -1306,20 +1368,56 @@ function renderGrid() {
 }
 
 /* ─── Render Calendar ─── */
+function getMonthWeeks(year, month) {
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const weeks = [];
+  // Start from Monday of the week containing the 1st
+  let ws = new Date(firstDay);
+  const dow = ws.getDay();
+  ws.setDate(ws.getDate() - ((dow + 6) % 7));
+  while (ws <= lastDay) {
+    const we = new Date(ws);
+    we.setDate(we.getDate() + 6);
+    weeks.push({ start: new Date(ws), end: new Date(we) });
+    ws.setDate(ws.getDate() + 7);
+  }
+  return weeks;
+}
+
+function shortDate(d) {
+  return d.getDate() + ' ' + MONTH_NAMES[d.getMonth()].slice(0, 3);
+}
+
 function renderCalendar() {
+  document.getElementById('cal-month-label').textContent =
+    `${MONTH_NAMES[calendarMonth]} ${calendarYear}`;
+
+  // Dynamic thead
+  const thead = document.getElementById('calendar-thead');
+  thead.innerHTML = `<tr><th style="width:140px">Semana</th>${CHANNELS_LIST.map(c =>
+    `<th>${escapeHtml(c)}</th>`).join('')}</tr>`;
+
+  const weeks = getMonthWeeks(calendarYear, calendarMonth);
+  const scheduled = contentPieces.filter(p => p.scheduled_date);
+
   const tbody = document.getElementById('calendar-body');
-  tbody.innerHTML = CALENDAR_DATA.map(week => `
-    <tr>
+  tbody.innerHTML = weeks.map((week, i) => {
+    const cells = CHANNELS_LIST.map(ch => {
+      const items = scheduled.filter(p => {
+        const d = new Date(p.scheduled_date + 'T12:00:00');
+        return p.channel === ch && d >= week.start && d <= week.end;
+      });
+      return renderCalCell(items);
+    });
+    return `<tr>
       <td>
-        <div class="cal-week-label">${week.label}</div>
-        <div class="cal-week-dates">${week.dates}</div>
+        <div class="cal-week-label">Semana ${i + 1}</div>
+        <div class="cal-week-dates">${shortDate(week.start)} – ${shortDate(week.end)}</div>
       </td>
-      <td>${renderCalCell(week.instagram)}</td>
-      <td>${renderCalCell(week.tiktok)}</td>
-      <td>${renderCalCell(week.web)}</td>
-      <td>${renderCalCell(week.email)}</td>
-    </tr>
-  `).join('');
+      ${cells.map(c => `<td>${c}</td>`).join('')}
+    </tr>`;
+  }).join('');
 }
 
 function renderCalCell(items) {
@@ -1355,6 +1453,7 @@ async function openModal(id, focus) {
   document.getElementById('modal-channel').textContent = piece.channel;
   document.getElementById('modal-format').textContent = piece.format;
   document.getElementById('modal-copy').value = piece.copy;
+  document.getElementById('modal-date').value = piece.scheduled_date || '';
 
   const noteSection = document.getElementById('modal-note-section');
   if (piece.note) {
@@ -1414,12 +1513,21 @@ async function saveCopy() {
   if (!currentPieceId) return;
   const piece = getPiece(currentPieceId);
   const newCopy = document.getElementById('modal-copy').value;
-  if (newCopy !== piece.copy) {
-    const ok = await updateCopy(currentPieceId, newCopy);
-    if (ok) {
-      piece.copy = newCopy;
+  const newDate = document.getElementById('modal-date').value || null;
+
+  const updates = {};
+  if (newCopy !== piece.copy) updates.copy = newCopy;
+  if (newDate !== (piece.scheduled_date || null)) updates.scheduled_date = newDate;
+
+  if (Object.keys(updates).length) {
+    updates.updated_at = new Date().toISOString();
+    const { error } = await sb.from('content_pieces').update(updates).eq('id', currentPieceId);
+    if (!error) {
+      if (updates.copy) piece.copy = updates.copy;
+      piece.scheduled_date = newDate;
       await incrementEdits();
       renderGrid();
+      renderCalendar();
       updateStats();
     }
   }
@@ -1462,12 +1570,18 @@ async function deletePiece(id) {
   updateStats();
 }
 
-/* ─── Pillars Modal ─── */
+/* ─── Settings Modal (Pillars, Channels, Formats) ─── */
 let editingPillars = [];
+let editingChannels = [];
+let editingFormats = [];
 
 function openPillarsModal() {
   editingPillars = Object.entries(PILARS).map(([key, p]) => ({ key, label: p.label, color: p.color, bg: p.bg }));
+  editingChannels = [...CHANNELS_LIST];
+  editingFormats = [...FORMATS_LIST];
   renderPillarsList();
+  renderSimpleList('channels-list', editingChannels, 'channel');
+  renderSimpleList('formats-list', editingFormats, 'format');
   const overlay = document.getElementById('pillars-overlay');
   overlay.classList.remove('closing');
   overlay.classList.add('open');
@@ -1523,33 +1637,79 @@ function removePillarRow(index) {
 function addPillarRow() {
   editingPillars.push({ key: '', label: '', color: '#666666', bg: '#ECECEC' });
   renderPillarsList();
-  // Focus the new key input
   const inputs = document.querySelectorAll('.pillar-key-input');
   inputs[inputs.length - 1]?.focus();
 }
 
+/* ─── Simple Lists (Channels & Formats) ─── */
+function renderSimpleList(containerId, arr, type) {
+  const list = document.getElementById(containerId);
+  list.innerHTML = arr.map((name, i) => `
+    <div class="simple-list-row">
+      <input type="text" class="simple-list-input" value="${escapeHtml(name)}" data-type="${type}" data-index="${i}" placeholder="Nombre">
+      <button class="btn btn-danger" onclick="removeSimpleItem('${type}', ${i})">Eliminar</button>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.simple-list-input').forEach(el => {
+    el.addEventListener('input', e => {
+      const idx = +e.target.dataset.index;
+      if (e.target.dataset.type === 'channel') editingChannels[idx] = e.target.value;
+      else editingFormats[idx] = e.target.value;
+    });
+  });
+}
+
+function removeSimpleItem(type, index) {
+  if (type === 'channel') {
+    editingChannels.splice(index, 1);
+    renderSimpleList('channels-list', editingChannels, 'channel');
+  } else {
+    editingFormats.splice(index, 1);
+    renderSimpleList('formats-list', editingFormats, 'format');
+  }
+}
+
+function addChannelRow() {
+  editingChannels.push('');
+  renderSimpleList('channels-list', editingChannels, 'channel');
+  const inputs = document.querySelectorAll('#channels-list .simple-list-input');
+  inputs[inputs.length - 1]?.focus();
+}
+
+function addFormatRow() {
+  editingFormats.push('');
+  renderSimpleList('formats-list', editingFormats, 'format');
+  const inputs = document.querySelectorAll('#formats-list .simple-list-input');
+  inputs[inputs.length - 1]?.focus();
+}
+
 async function savePillars() {
-  // Validate
+  // Validate pillars
   const valid = editingPillars.every(p => p.key && p.label);
   if (!valid) { alert('Cada pilar necesita una clave y un nombre.'); return; }
 
-  // Find deleted pillars
+  // Validate channels & formats (filter empty)
+  const cleanChannels = editingChannels.map(c => c.trim()).filter(Boolean);
+  const cleanFormats = editingFormats.map(f => f.trim()).filter(Boolean);
+  if (!cleanChannels.length) { alert('Necesitás al menos un canal.'); return; }
+  if (!cleanFormats.length) { alert('Necesitás al menos un formato.'); return; }
+
+  // Save pillars
   const currentKeys = Object.keys(PILARS);
   const newKeys = editingPillars.map(p => p.key);
   const deleted = currentKeys.filter(k => !newKeys.includes(k));
+  for (const key of deleted) await deletePillar(key);
+  for (const p of editingPillars) await upsertPillar(p.key, p.label, p.color, p.bg);
 
-  // Delete removed pillars
-  for (const key of deleted) {
-    await deletePillar(key);
-  }
-
-  // Upsert all
-  for (const p of editingPillars) {
-    await upsertPillar(p.key, p.label, p.color, p.bg);
-  }
+  // Save channels & formats
+  await syncChannels(cleanChannels);
+  await syncFormats(cleanFormats);
 
   // Reload
   await fetchPillars();
+  await fetchChannels();
+  await fetchFormats();
   renderFilters();
   renderGrid();
   renderCalendar();
@@ -1634,9 +1794,18 @@ function openNewIdeaModal() {
   pilarSelect.innerHTML = Object.entries(PILARS).map(([key, p]) =>
     `<option value="${key}">${escapeHtml(p.label)}</option>`
   ).join('');
+  const channelSelect = document.getElementById('new-idea-channel');
+  channelSelect.innerHTML = CHANNELS_LIST.map(c =>
+    `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+  ).join('');
+  const formatSelect = document.getElementById('new-idea-format');
+  formatSelect.innerHTML = FORMATS_LIST.map(f =>
+    `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`
+  ).join('');
   document.getElementById('new-idea-title').value = '';
   document.getElementById('new-idea-copy').value = '';
   document.getElementById('new-idea-note').value = '';
+  document.getElementById('new-idea-date').value = '';
   const overlay = document.getElementById('new-idea-overlay');
   overlay.classList.add('open');
   overlay.classList.remove('closing');
@@ -1656,11 +1825,12 @@ async function saveNewIdea() {
   const format = document.getElementById('new-idea-format').value;
   const copy = document.getElementById('new-idea-copy').value.trim();
   const note = document.getElementById('new-idea-note').value.trim() || null;
+  const scheduled_date = document.getElementById('new-idea-date').value || null;
 
   if (!title || !copy) { alert('Completá al menos el título y el copy.'); return; }
 
   const { data, error } = await sb.from('content_pieces')
-    .insert({ pilar, channel, format, title, copy, note })
+    .insert({ pilar, channel, format, title, copy, note, scheduled_date })
     .select()
     .single();
 
@@ -1720,8 +1890,22 @@ document.getElementById('pillars-close').addEventListener('click', closePillarsM
 document.getElementById('pillars-cancel').addEventListener('click', closePillarsModal);
 document.getElementById('pillars-save').addEventListener('click', savePillars);
 document.getElementById('add-pillar-btn').addEventListener('click', addPillarRow);
+document.getElementById('add-channel-btn').addEventListener('click', addChannelRow);
+document.getElementById('add-format-btn').addEventListener('click', addFormatRow);
 document.getElementById('pillars-overlay').addEventListener('click', e => {
   if (e.target === e.currentTarget) closePillarsModal();
+});
+
+// Calendar navigation
+document.getElementById('cal-prev').addEventListener('click', () => {
+  calendarMonth--;
+  if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+  renderCalendar();
+});
+document.getElementById('cal-next').addEventListener('click', () => {
+  calendarMonth++;
+  if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+  renderCalendar();
 });
 
 // Voice
@@ -1738,8 +1922,7 @@ document.addEventListener('keydown', e => {
 
 /* ─── Init ─── */
 (async function init() {
-  await fetchPillars();
-  await fetchContent();
+  await Promise.all([fetchPillars(), fetchChannels(), fetchFormats(), fetchContent()]);
   editsCount = await fetchEdits();
   totalComments = await fetchTotalComments();
   renderFilters();
