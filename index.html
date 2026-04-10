@@ -1590,9 +1590,11 @@ function getMonthWeeks(year, month) {
   let ws = new Date(firstDay);
   const dow = ws.getDay();
   ws.setDate(ws.getDate() - ((dow + 6) % 7));
+  ws.setHours(0, 0, 0, 0);
   while (ws <= lastDay) {
     const we = new Date(ws);
     we.setDate(we.getDate() + 6);
+    we.setHours(23, 59, 59, 999); // include all of Sunday
     weeks.push({ start: new Date(ws), end: new Date(we) });
     ws.setDate(ws.getDate() + 7);
   }
@@ -2088,6 +2090,15 @@ async function saveNewIdea() {
   if (error) { console.error('Error creating idea:', error); alert('Error al crear la idea.'); return; }
 
   contentPieces.push(data);
+  // Si la idea tiene fecha programada, saltar el calendario a ese mes
+  // para que el usuario la vea aunque esté en otro mes distinto al actual.
+  if (data.scheduled_date) {
+    const d = new Date(data.scheduled_date + 'T12:00:00');
+    if (!isNaN(d)) {
+      calendarYear = d.getFullYear();
+      calendarMonth = d.getMonth();
+    }
+  }
   renderGrid();
   renderCalendar();
   updateStats();
