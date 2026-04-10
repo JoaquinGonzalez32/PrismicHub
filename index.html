@@ -1470,7 +1470,7 @@ async function openModal(id, focus) {
   const pilarExists = !!PILARS[piece.pilar];
   const orphanOpt = pilarExists ? '' : `<option value="${escapeHtml(piece.pilar)}" selected>${escapeHtml(piece.pilar)} (no existe)</option>`;
   pilarSel.innerHTML = orphanOpt + Object.entries(PILARS).map(([key, p]) =>
-    `<option value="${key}"${key === piece.pilar ? ' selected' : ''}>${escapeHtml(p.label)}</option>`
+    `<option value="${key}"${key === piece.pilar ? ' selected' : ''}>${escapeHtml(key)} — ${escapeHtml(p.label)}</option>`
   ).join('');
 
   // Channel select
@@ -1838,7 +1838,7 @@ function stopVoice() {
 function openNewIdeaModal() {
   const pilarSelect = document.getElementById('new-idea-pilar');
   pilarSelect.innerHTML = Object.entries(PILARS).map(([key, p]) =>
-    `<option value="${key}">${escapeHtml(p.label)}</option>`
+    `<option value="${key}">${escapeHtml(key)} — ${escapeHtml(p.label)}</option>`
   ).join('');
   const channelSelect = document.getElementById('new-idea-channel');
   channelSelect.innerHTML = CHANNELS_LIST.map(c =>
