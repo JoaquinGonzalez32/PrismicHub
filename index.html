@@ -212,6 +212,71 @@ body::before {
 }
 .filter-btn.active .filter-dot { background: var(--surface) !important; }
 
+/* ─── Sort Bar ─── */
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: -14px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.sort-btn {
+  font-family: var(--font-body);
+  font-size: 0.74rem;
+  font-weight: 500;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  background: var(--surface);
+  color: var(--ink-light);
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.sort-btn:hover {
+  border-color: var(--ink-muted);
+  color: var(--ink);
+}
+.sort-btn.active {
+  background: var(--ink);
+  color: var(--surface);
+  border-color: var(--ink);
+}
+.sort-btn svg { width: 12px; height: 12px; }
+
+/* ─── Grid group header (sort by pilar) ─── */
+.grid-group-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 0 6px;
+  margin-top: 4px;
+  border-bottom: 1px solid var(--border-light);
+}
+.grid-group-header:first-child { margin-top: 0; padding-top: 0; }
+.grid-group-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.grid-group-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.grid-group-count {
+  font-size: 0.7rem;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 /* ─── Manage Pillars Button ─── */
 .manage-pillars-btn {
   font-family: var(--font-body);
@@ -293,6 +358,22 @@ body::before {
   margin-right: 6px;
   color: var(--border);
 }
+.card-date {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--ink-light);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid var(--border-light);
+  border-radius: 100px;
+  background: var(--bg);
+  white-space: nowrap;
+}
+.card-date svg { width: 11px; height: 11px; opacity: 0.75; }
+.card-date.no-date { opacity: 0.6; font-style: italic; }
 .card-title {
   font-family: var(--font-display);
   font-size: 1.35rem;
@@ -914,7 +995,7 @@ body::before {
 .form-group select:focus,
 .form-group textarea:focus { border-color: var(--accent); }
 .form-group textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: start; }
 </style>
 </head>
 <body>
@@ -967,6 +1048,13 @@ body::before {
       <!-- Dynamic pillar filters rendered here -->
     </div>
 
+    <div class="sort-bar" id="sort-bar">
+      <span class="filter-label">Ordenar</span>
+      <button class="sort-btn active" data-sort="publication">Fecha de publicación</button>
+      <button class="sort-btn" data-sort="creation">Fecha de creación</button>
+      <button class="sort-btn" data-sort="pilar">Agrupar por pilar</button>
+    </div>
+
     <div class="content-grid" id="content-grid"></div>
   </section>
 
@@ -1002,10 +1090,10 @@ body::before {
         <label>Título</label>
         <input type="text" id="modal-title-input" style="font-family:var(--font-display);font-size:1.4rem;font-weight:400;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);width:100%;outline:none;">
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;align-items:start">
         <div class="form-group">
-          <label>Pilar</label>
-          <select id="modal-pilar-select" style="font-family:var(--font-body);font-size:0.88rem;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);width:100%;outline:none;"></select>
+          <label>Pilar <span style="font-size:0.7rem;color:var(--ink-light);font-weight:400">(Ctrl/Cmd para elegir varios)</span></label>
+          <select id="modal-pilar-select" multiple size="4" style="font-family:var(--font-body);font-size:0.88rem;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);width:100%;outline:none;min-height:96px;"></select>
         </div>
         <div class="form-group">
           <label>Canal</label>
@@ -1078,8 +1166,8 @@ body::before {
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Pilar</label>
-            <select id="new-idea-pilar"></select>
+            <label>Pilar <span style="font-size:0.7rem;color:var(--ink-light);font-weight:400">(Ctrl/Cmd para varios)</span></label>
+            <select id="new-idea-pilar" multiple size="4" style="min-height:96px"></select>
           </div>
           <div class="form-group">
             <label>Canal</label>
@@ -1177,6 +1265,7 @@ let contentPieces = [];
 let editsCount = 0;
 let totalComments = 0;
 let currentFilter = 'all';
+let currentSort = 'publication'; // 'publication' | 'creation' | 'pilar'
 let currentCommentType = 'comment';
 let currentPieceId = null;
 let calendarYear = new Date().getFullYear();
@@ -1290,6 +1379,15 @@ function escapeHtml(str) {
   return d.innerHTML;
 }
 
+function formatShortDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + (iso.length === 10 ? 'T12:00:00' : ''));
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+const CAL_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+
 function pilarStyle(key, prop) {
   const p = PILARS[key];
   if (!p) return '';
@@ -1297,6 +1395,35 @@ function pilarStyle(key, prop) {
   if (prop === 'bg') return p.bg;
   if (prop === 'label') return p.label;
   return '';
+}
+
+// Multi-pilar support: a piece.pilar may be a single key ("ed") or
+// several comma-separated keys ("ed,aw"). Helpers:
+function parsePilars(val) {
+  if (!val) return [];
+  return String(val).split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function pilarDisplay(val) {
+  const keys = parsePilars(val);
+  if (!keys.length) return { color: '#999', bg: '#f0f0f0', label: val || '' };
+  if (keys.length === 1) {
+    const k = keys[0];
+    const p = PILARS[k];
+    if (!p) return { color: '#999', bg: '#f0f0f0', label: k };
+    return { color: p.color, bg: p.bg, label: p.label };
+  }
+  // Multiple selected → mostrar las keys asociadas
+  const first = PILARS[keys[0]];
+  return {
+    color: first?.color || '#555',
+    bg: first?.bg || '#ECECEC',
+    label: keys.join(' · ')
+  };
+}
+
+function pilarMatches(val, filter) {
+  return parsePilars(val).includes(filter);
 }
 
 function lightenColor(hex, amount = 0.85) {
@@ -1348,25 +1475,33 @@ function bindFilterEvents() {
   if (openBtn) openBtn.addEventListener('click', openPillarsModal);
 }
 
-/* ─── Render Cards ─── */
-function renderGrid() {
-  const grid = document.getElementById('content-grid');
-  const filtered = currentFilter === 'all'
-    ? contentPieces
-    : contentPieces.filter(c => c.pilar === currentFilter);
+function bindSortEvents() {
+  document.querySelectorAll('#sort-bar .sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#sort-bar .sort-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSort = btn.dataset.sort;
+      renderGrid();
+    });
+  });
+}
 
-  grid.innerHTML = filtered.map((piece, i) => {
-    const color = pilarStyle(piece.pilar, 'color') || '#999';
-    const bg = pilarStyle(piece.pilar, 'bg') || '#f0f0f0';
-    const label = pilarStyle(piece.pilar, 'label') || piece.pilar;
-    return `
-    <article class="card" style="animation-delay:${i * 0.05}s" data-id="${piece.id}">
+/* ─── Render Cards ─── */
+function renderCardHtml(piece, i) {
+  const { color, bg, label } = pilarDisplay(piece.pilar);
+  const dateStr = formatShortDate(piece.scheduled_date);
+  const dateEl = dateStr
+    ? `<span class="card-date" title="Fecha de publicación">${CAL_ICON_SVG}${escapeHtml(dateStr)}</span>`
+    : `<span class="card-date no-date" title="Sin fecha de publicación">${CAL_ICON_SVG}Sin fecha</span>`;
+  return `
+    <article class="card" style="animation-delay:${Math.min(i, 12) * 0.04}s" data-id="${piece.id}">
       <div class="card-stripe" style="background:${color}"></div>
       <div class="card-body">
         <div class="card-meta">
           <span class="card-tag" style="background:${bg};color:${color}">${escapeHtml(label)}</span>
           <span class="card-channel">${escapeHtml(piece.channel)}</span>
           <span class="card-format">· ${escapeHtml(piece.format)}</span>
+          ${dateEl}
         </div>
         <h3 class="card-title">${escapeHtml(piece.title)}</h3>
         <p class="card-copy">${escapeHtml(piece.copy).replace(/\n/g, ' ')}</p>
@@ -1377,7 +1512,73 @@ function renderGrid() {
         </div>
       </div>
     </article>`;
-  }).join('');
+}
+
+function sortByPublication(a, b) {
+  const da = a.scheduled_date, db = b.scheduled_date;
+  if (!da && !db) return (b.id || 0) - (a.id || 0);
+  if (!da) return 1;   // sin fecha al final
+  if (!db) return -1;
+  return da.localeCompare(db); // ascendente (más próximo primero)
+}
+
+function sortByCreation(a, b) {
+  // created_at si existe, sino id
+  const ca = a.created_at || '', cb = b.created_at || '';
+  if (ca && cb) return cb.localeCompare(ca); // descendente (más reciente primero)
+  return (b.id || 0) - (a.id || 0);
+}
+
+function renderGrid() {
+  const grid = document.getElementById('content-grid');
+  const filtered = currentFilter === 'all'
+    ? contentPieces.slice()
+    : contentPieces.filter(c => pilarMatches(c.pilar, currentFilter));
+
+  if (!filtered.length) {
+    grid.innerHTML = '<p style="color:var(--ink-light);font-style:italic;grid-column:1/-1;text-align:center;padding:40px 0">No hay piezas para mostrar.</p>';
+    return;
+  }
+
+  if (currentSort === 'pilar') {
+    // Agrupar por cada key (una pieza con múltiples pilares aparece en cada grupo)
+    const groups = {};
+    filtered.forEach(piece => {
+      const keys = parsePilars(piece.pilar);
+      if (!keys.length) {
+        (groups['__sin_pilar__'] = groups['__sin_pilar__'] || []).push(piece);
+      } else {
+        keys.forEach(k => { (groups[k] = groups[k] || []).push(piece); });
+      }
+    });
+    // Orden: primero las keys definidas en PILARS (en su orden), luego huérfanas, luego sin pilar
+    const pilarKeys = Object.keys(PILARS);
+    const orderedKeys = [
+      ...pilarKeys.filter(k => groups[k]),
+      ...Object.keys(groups).filter(k => !pilarKeys.includes(k) && k !== '__sin_pilar__'),
+      ...(groups['__sin_pilar__'] ? ['__sin_pilar__'] : [])
+    ];
+    let idx = 0;
+    grid.innerHTML = orderedKeys.map(k => {
+      const isSinPilar = k === '__sin_pilar__';
+      const p = PILARS[k];
+      const color = p?.color || '#999';
+      const title = isSinPilar ? 'Sin pilar' : (p?.label || k);
+      const items = groups[k].slice().sort(sortByPublication);
+      const header = `
+        <div class="grid-group-header">
+          <span class="grid-group-dot" style="background:${color}"></span>
+          <span class="grid-group-title">${escapeHtml(title)}</span>
+          <span class="grid-group-count">${items.length} ${items.length === 1 ? 'pieza' : 'piezas'}</span>
+        </div>`;
+      const cards = items.map(piece => renderCardHtml(piece, idx++)).join('');
+      return header + cards;
+    }).join('');
+    return;
+  }
+
+  const sorted = filtered.sort(currentSort === 'creation' ? sortByCreation : sortByPublication);
+  grid.innerHTML = sorted.map((piece, i) => renderCardHtml(piece, i)).join('');
 }
 
 /* ─── Render Calendar ─── */
@@ -1436,9 +1637,7 @@ function renderCalendar() {
 function renderCalCell(items) {
   if (!items.length) return '<span class="empty-cell">—</span>';
   return items.map(it => {
-    const color = pilarStyle(it.pilar, 'color') || '#999';
-    const bg = pilarStyle(it.pilar, 'bg') || '#f0f0f0';
-    const label = pilarStyle(it.pilar, 'label') || it.pilar;
+    const { color, bg, label } = pilarDisplay(it.pilar);
     return `
     <div class="cal-item" style="background:${bg};border-left-color:${color}" onclick="openModal(${it.id}, 'edit')">
       <div class="cal-item-pilar">${escapeHtml(label)}</div>
@@ -1454,9 +1653,7 @@ async function openModal(id, focus) {
   currentPieceId = id;
 
   // Pilar tag header
-  const color = pilarStyle(piece.pilar, 'color') || '#999';
-  const bg = pilarStyle(piece.pilar, 'bg') || '#f0f0f0';
-  const label = pilarStyle(piece.pilar, 'label') || piece.pilar;
+  const { color, bg, label } = pilarDisplay(piece.pilar);
   const tag = document.getElementById('modal-tag');
   tag.textContent = label;
   tag.style.background = bg;
@@ -1465,12 +1662,15 @@ async function openModal(id, focus) {
   // Title
   document.getElementById('modal-title-input').value = piece.title;
 
-  // Pilar select
+  // Pilar multi-select
   const pilarSel = document.getElementById('modal-pilar-select');
-  const pilarExists = !!PILARS[piece.pilar];
-  const orphanOpt = pilarExists ? '' : `<option value="${escapeHtml(piece.pilar)}" selected>${escapeHtml(piece.pilar)} (no existe)</option>`;
-  pilarSel.innerHTML = orphanOpt + Object.entries(PILARS).map(([key, p]) =>
-    `<option value="${key}"${key === piece.pilar ? ' selected' : ''}>${escapeHtml(key)} — ${escapeHtml(p.label)}</option>`
+  const pieceKeys = parsePilars(piece.pilar);
+  const orphanKeys = pieceKeys.filter(k => !PILARS[k]);
+  const orphanOpts = orphanKeys.map(k =>
+    `<option value="${escapeHtml(k)}" selected>${escapeHtml(k)} (no existe)</option>`
+  ).join('');
+  pilarSel.innerHTML = orphanOpts + Object.entries(PILARS).map(([key, p]) =>
+    `<option value="${key}"${pieceKeys.includes(key) ? ' selected' : ''}>${escapeHtml(key)} — ${escapeHtml(p.label)}</option>`
   ).join('');
 
   // Channel select
@@ -1550,13 +1750,15 @@ async function saveCopy() {
   if (!currentPieceId) return;
   const piece = getPiece(currentPieceId);
   const newTitle = document.getElementById('modal-title-input').value.trim();
-  const newPilar = document.getElementById('modal-pilar-select').value;
+  const pilarSelEl = document.getElementById('modal-pilar-select');
+  const newPilar = Array.from(pilarSelEl.selectedOptions).map(o => o.value).join(',');
   const newChannel = document.getElementById('modal-channel-select').value;
   const newFormat = document.getElementById('modal-format-select').value;
   const newCopy = document.getElementById('modal-copy').value;
   const newDate = document.getElementById('modal-date').value || null;
 
   if (!newTitle) { alert('El título no puede estar vacío.'); return; }
+  if (!newPilar) { alert('Seleccioná al menos un pilar.'); return; }
 
   const updates = {};
   if (newTitle !== piece.title) updates.title = newTitle;
@@ -1837,8 +2039,9 @@ function stopVoice() {
 /* ─── New Idea Modal ─── */
 function openNewIdeaModal() {
   const pilarSelect = document.getElementById('new-idea-pilar');
-  pilarSelect.innerHTML = Object.entries(PILARS).map(([key, p]) =>
-    `<option value="${key}">${escapeHtml(key)} — ${escapeHtml(p.label)}</option>`
+  const pilarEntries = Object.entries(PILARS);
+  pilarSelect.innerHTML = pilarEntries.map(([key, p], idx) =>
+    `<option value="${key}"${idx === 0 ? ' selected' : ''}>${escapeHtml(key)} — ${escapeHtml(p.label)}</option>`
   ).join('');
   const channelSelect = document.getElementById('new-idea-channel');
   channelSelect.innerHTML = CHANNELS_LIST.map(c =>
@@ -1866,7 +2069,8 @@ function closeNewIdeaModal() {
 
 async function saveNewIdea() {
   const title = document.getElementById('new-idea-title').value.trim();
-  const pilar = document.getElementById('new-idea-pilar').value;
+  const pilarSelEl = document.getElementById('new-idea-pilar');
+  const pilar = Array.from(pilarSelEl.selectedOptions).map(o => o.value).join(',');
   const channel = document.getElementById('new-idea-channel').value;
   const format = document.getElementById('new-idea-format').value;
   const copy = document.getElementById('new-idea-copy').value.trim();
@@ -1874,6 +2078,7 @@ async function saveNewIdea() {
   const scheduled_date = document.getElementById('new-idea-date').value || null;
 
   if (!title || !copy) { alert('Completá al menos el título y el copy.'); return; }
+  if (!pilar) { alert('Seleccioná al menos un pilar.'); return; }
 
   const { data, error } = await sb.from('content_pieces')
     .insert({ pilar, channel, format, title, copy, note, scheduled_date })
@@ -1972,6 +2177,7 @@ document.addEventListener('keydown', e => {
   editsCount = await fetchEdits();
   totalComments = await fetchTotalComments();
   renderFilters();
+  bindSortEvents();
   renderGrid();
   renderCalendar();
   updateStats();
