@@ -212,6 +212,62 @@ body::before {
 }
 .filter-btn.active .filter-dot { background: var(--surface) !important; }
 
+/* ─── Pilar Checklist (multi-select with checkboxes) ─── */
+.pilar-checklist {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  padding: 5px;
+  max-height: 156px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.pilar-check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+  transition: background var(--transition);
+  user-select: none;
+}
+.pilar-check-item:hover { background: var(--surface); }
+.pilar-check-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pilar-check-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pilar-check-key {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  min-width: 42px;
+}
+.pilar-check-label {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.pilar-check-item.orphan .pilar-check-label { font-style: italic; color: var(--ink-light); }
+
 /* ─── Sort Bar ─── */
 .sort-bar {
   display: flex;
@@ -303,8 +359,11 @@ body::before {
 /* ─── Content Grid ─── */
 .content-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+@media (max-width: 760px) {
+  .content-grid { grid-template-columns: 1fr; }
 }
 
 /* ─── Content Card ─── */
@@ -383,11 +442,11 @@ body::before {
   letter-spacing: -0.01em;
 }
 .card-copy {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--ink-muted);
-  line-height: 1.55;
+  line-height: 1.6;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin-bottom: 16px;
@@ -779,18 +838,36 @@ body::before {
 }
 .cal-item:hover { transform: translateX(2px); }
 .cal-item:last-child { margin-bottom: 0; }
+.cal-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
 .cal-item-pilar {
   font-size: 0.6rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cal-item-date {
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .cal-item-title {
   font-size: 0.8rem;
   font-weight: 500;
   line-height: 1.3;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 .empty-cell {
   font-size: 0.75rem;
@@ -1092,8 +1169,8 @@ body::before {
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;align-items:start">
         <div class="form-group">
-          <label>Pilar <span style="font-size:0.7rem;color:var(--ink-light);font-weight:400">(Ctrl/Cmd para elegir varios)</span></label>
-          <select id="modal-pilar-select" multiple size="4" style="font-family:var(--font-body);font-size:0.88rem;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);width:100%;outline:none;min-height:96px;"></select>
+          <label>Pilar <span style="font-size:0.7rem;color:var(--ink-light);font-weight:400">(elegí uno o varios)</span></label>
+          <div class="pilar-checklist" id="modal-pilar-checklist"></div>
         </div>
         <div class="form-group">
           <label>Canal</label>
@@ -1166,8 +1243,8 @@ body::before {
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Pilar <span style="font-size:0.7rem;color:var(--ink-light);font-weight:400">(Ctrl/Cmd para varios)</span></label>
-            <select id="new-idea-pilar" multiple size="4" style="min-height:96px"></select>
+            <label>Pilar <span style="font-size:0.7rem;color:var(--ink-light);font-weight:400">(elegí uno o varios)</span></label>
+            <div class="pilar-checklist" id="new-idea-pilar-checklist"></div>
           </div>
           <div class="form-group">
             <label>Canal</label>
@@ -1377,6 +1454,31 @@ function escapeHtml(str) {
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
+}
+
+function buildPilarChecklistHtml(selectedKeys = []) {
+  const selected = new Set(selectedKeys);
+  const orphanKeys = selectedKeys.filter(k => !PILARS[k]);
+  const orphanHtml = orphanKeys.map(k => `
+    <label class="pilar-check-item orphan">
+      <input type="checkbox" value="${escapeHtml(k)}" checked>
+      <span class="pilar-check-dot" style="background:#999"></span>
+      <span class="pilar-check-key">${escapeHtml(k)}</span>
+      <span class="pilar-check-label">(no existe)</span>
+    </label>`).join('');
+  const items = Object.entries(PILARS).map(([key, p]) => `
+    <label class="pilar-check-item">
+      <input type="checkbox" value="${escapeHtml(key)}"${selected.has(key) ? ' checked' : ''}>
+      <span class="pilar-check-dot" style="background:${p.color}"></span>
+      <span class="pilar-check-key">${escapeHtml(key)}</span>
+      <span class="pilar-check-label">${escapeHtml(p.label)}</span>
+    </label>`).join('');
+  return orphanHtml + items;
+}
+
+function getPilarChecklistValue(containerId) {
+  const boxes = document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`);
+  return Array.from(boxes).map(b => b.value).join(',');
 }
 
 function formatShortDate(iso) {
@@ -1638,11 +1740,18 @@ function renderCalendar() {
 
 function renderCalCell(items) {
   if (!items.length) return '<span class="empty-cell">—</span>';
-  return items.map(it => {
+  // Orden interno: por fecha ascendente
+  const sorted = items.slice().sort((a, b) =>
+    (a.scheduled_date || '').localeCompare(b.scheduled_date || ''));
+  return sorted.map(it => {
     const { color, bg, label } = pilarDisplay(it.pilar);
+    const dateStr = formatShortDate(it.scheduled_date);
     return `
     <div class="cal-item" style="background:${bg};border-left-color:${color}" onclick="openModal(${it.id}, 'edit')">
-      <div class="cal-item-pilar">${escapeHtml(label)}</div>
+      <div class="cal-item-head">
+        <span class="cal-item-pilar">${escapeHtml(label)}</span>
+        ${dateStr ? `<span class="cal-item-date">${escapeHtml(dateStr)}</span>` : ''}
+      </div>
       <div class="cal-item-title">${escapeHtml(it.title)}</div>
     </div>`;
   }).join('');
@@ -1664,16 +1773,9 @@ async function openModal(id, focus) {
   // Title
   document.getElementById('modal-title-input').value = piece.title;
 
-  // Pilar multi-select
-  const pilarSel = document.getElementById('modal-pilar-select');
+  // Pilar multi-select (checkboxes)
   const pieceKeys = parsePilars(piece.pilar);
-  const orphanKeys = pieceKeys.filter(k => !PILARS[k]);
-  const orphanOpts = orphanKeys.map(k =>
-    `<option value="${escapeHtml(k)}" selected>${escapeHtml(k)} (no existe)</option>`
-  ).join('');
-  pilarSel.innerHTML = orphanOpts + Object.entries(PILARS).map(([key, p]) =>
-    `<option value="${key}"${pieceKeys.includes(key) ? ' selected' : ''}>${escapeHtml(key)} — ${escapeHtml(p.label)}</option>`
-  ).join('');
+  document.getElementById('modal-pilar-checklist').innerHTML = buildPilarChecklistHtml(pieceKeys);
 
   // Channel select
   const chSel = document.getElementById('modal-channel-select');
@@ -1752,8 +1854,7 @@ async function saveCopy() {
   if (!currentPieceId) return;
   const piece = getPiece(currentPieceId);
   const newTitle = document.getElementById('modal-title-input').value.trim();
-  const pilarSelEl = document.getElementById('modal-pilar-select');
-  const newPilar = Array.from(pilarSelEl.selectedOptions).map(o => o.value).join(',');
+  const newPilar = getPilarChecklistValue('modal-pilar-checklist');
   const newChannel = document.getElementById('modal-channel-select').value;
   const newFormat = document.getElementById('modal-format-select').value;
   const newCopy = document.getElementById('modal-copy').value;
@@ -2040,11 +2141,10 @@ function stopVoice() {
 
 /* ─── New Idea Modal ─── */
 function openNewIdeaModal() {
-  const pilarSelect = document.getElementById('new-idea-pilar');
-  const pilarEntries = Object.entries(PILARS);
-  pilarSelect.innerHTML = pilarEntries.map(([key, p], idx) =>
-    `<option value="${key}"${idx === 0 ? ' selected' : ''}>${escapeHtml(key)} — ${escapeHtml(p.label)}</option>`
-  ).join('');
+  // Preselecciona el primer pilar por conveniencia
+  const firstKey = Object.keys(PILARS)[0];
+  document.getElementById('new-idea-pilar-checklist').innerHTML =
+    buildPilarChecklistHtml(firstKey ? [firstKey] : []);
   const channelSelect = document.getElementById('new-idea-channel');
   channelSelect.innerHTML = CHANNELS_LIST.map(c =>
     `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
@@ -2071,8 +2171,7 @@ function closeNewIdeaModal() {
 
 async function saveNewIdea() {
   const title = document.getElementById('new-idea-title').value.trim();
-  const pilarSelEl = document.getElementById('new-idea-pilar');
-  const pilar = Array.from(pilarSelEl.selectedOptions).map(o => o.value).join(',');
+  const pilar = getPilarChecklistValue('new-idea-pilar-checklist');
   const channel = document.getElementById('new-idea-channel').value;
   const format = document.getElementById('new-idea-format').value;
   const copy = document.getElementById('new-idea-copy').value.trim();
