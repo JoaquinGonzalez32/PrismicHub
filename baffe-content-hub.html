@@ -515,20 +515,111 @@
   }
   .stat-label { font-size: 11px; color: var(--ink3); margin-top: 2px; }
 
+  /* WELCOME MODAL */
+  .welcome-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,23,20,0.55);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .welcome-overlay.hidden { display: none; }
+  .welcome-box {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 40px 36px 32px;
+    max-width: 380px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+  }
+  .welcome-box h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 26px;
+    margin-bottom: 8px;
+    letter-spacing: -0.4px;
+  }
+  .welcome-box p {
+    font-size: 13px;
+    color: var(--ink2);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+  .welcome-input {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+    color: var(--ink);
+    transition: border-color 0.15s;
+    margin-bottom: 16px;
+  }
+  .welcome-input:focus { border-color: var(--accent); }
+  .welcome-btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--ink);
+    color: #F7F4EF;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .welcome-btn:hover { background: #333028; }
+  .welcome-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* AUTHOR TAG */
+  .author-tag {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* HEADER USER */
+  .header-user {
+    font-size: 12px;
+    color: rgba(247,244,239,0.7);
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .header-user:hover { color: rgba(247,244,239,1); }
+
   /* RESPONSIVE */
   @media (max-width: 600px) {
     header { padding: 16px 20px; }
     main { padding: 20px; }
     .tabs { margin: 20px 20px 0; }
     .cards-grid { grid-template-columns: 1fr; }
+    .welcome-box { padding: 32px 24px 24px; }
   }
 </style>
 </head>
 <body>
 
+<!-- WELCOME NAME MODAL -->
+<div class="welcome-overlay hidden" id="welcomeOverlay">
+  <div class="welcome-box">
+    <h2>Bienvenido a Baffé</h2>
+    <p>Para registrar tus aportes, contanos quién sos.</p>
+    <input class="welcome-input" id="welcomeNameInput" type="text" placeholder="Tu nombre" maxlength="30" autocomplete="off">
+    <button class="welcome-btn" id="welcomeBtn" onclick="saveUserName()" disabled>Entrar</button>
+  </div>
+</div>
+
 <header>
   <div class="logo">Baffé <span>·</span> contenido</div>
-  <div class="header-meta">hub del equipo</div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div class="header-user" id="headerUser" onclick="changeUserName()" title="Cambiar nombre"></div>
+    <div class="header-meta">hub del equipo</div>
+  </div>
 </header>
 
 <div class="tabs" id="tabBar">
@@ -781,12 +872,82 @@ const CALENDAR_DATA = [
 let currentCardId = null;
 let currentCommentType = 'comment';
 
+/* --- USER NAME --- */
+function getUserName() {
+  return localStorage.getItem('baffe_user_name') || '';
+}
+
+function saveUserName() {
+  const name = document.getElementById('welcomeNameInput').value.trim();
+  if (!name) return;
+  localStorage.setItem('baffe_user_name', name);
+  document.getElementById('welcomeOverlay').classList.add('hidden');
+  updateHeaderUser();
+}
+
+function changeUserName() {
+  const current = getUserName();
+  const overlay = document.getElementById('welcomeOverlay');
+  document.getElementById('welcomeNameInput').value = current;
+  document.getElementById('welcomeBtn').disabled = !current;
+  overlay.classList.remove('hidden');
+  document.getElementById('welcomeNameInput').focus();
+}
+
+function updateHeaderUser() {
+  const name = getUserName();
+  const el = document.getElementById('headerUser');
+  el.textContent = name ? name : '';
+}
+
+function initWelcome() {
+  const name = getUserName();
+  if (!name) {
+    document.getElementById('welcomeOverlay').classList.remove('hidden');
+    setTimeout(() => document.getElementById('welcomeNameInput').focus(), 100);
+  }
+  updateHeaderUser();
+
+  const input = document.getElementById('welcomeNameInput');
+  input.addEventListener('input', () => {
+    document.getElementById('welcomeBtn').disabled = !input.value.trim();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && input.value.trim()) saveUserName();
+  });
+}
+
 function getStorage() {
   try {
     const d = localStorage.getItem('baffe_content_v1');
-    return d ? JSON.parse(d) : { edits: {}, comments: {} };
-  } catch(e) { return { edits: {}, comments: {} }; }
+    return d ? JSON.parse(d) : { edits: {}, comments: {}, editAuthors: {} };
+  } catch(e) { return { edits: {}, comments: {}, editAuthors: {} }; }
 }
+
+/* Migración: eliminar datos sin autor */
+(function migrateOldData() {
+  const s = getStorage();
+  let changed = false;
+  // Borrar ediciones sin autor registrado
+  for (const id of Object.keys(s.edits)) {
+    if (!s.editAuthors || !s.editAuthors[id]) {
+      delete s.edits[id];
+      changed = true;
+    }
+  }
+  // Borrar comentarios sin author
+  for (const id of Object.keys(s.comments)) {
+    const filtered = (s.comments[id] || []).filter(c => c.author);
+    if (filtered.length !== (s.comments[id] || []).length) {
+      s.comments[id] = filtered;
+      if (filtered.length === 0) delete s.comments[id];
+      changed = true;
+    }
+  }
+  if (changed) {
+    try { localStorage.setItem('baffe_content_v1', JSON.stringify(s)); } catch(e) {}
+  }
+})();
 function setStorage(data) {
   try { localStorage.setItem('baffe_content_v1', JSON.stringify(data)); } catch(e) {}
 }
@@ -824,7 +985,8 @@ function renderCards(filterPilarVal) {
     const p = PILLAR_CONFIG[item.pilar];
     const copy = s.edits[item.id] || item.copy;
     const comments = s.comments[item.id] || [];
-    const edited = s.edits[item.id] ? '<span style="font-size:11px;color:var(--accent);margin-left:6px;">editado</span>' : '';
+    const editAuthor = s.editAuthors && s.editAuthors[item.id] ? s.editAuthors[item.id] : null;
+    const edited = s.edits[item.id] ? `<span style="font-size:11px;color:var(--accent);margin-left:6px;">editado${editAuthor ? ' por ' + editAuthor.name : ''}</span>` : '';
     return `
       <div class="content-card" data-pilar="${item.pilar}">
         <div class="card-stripe" style="background:${p.stripe}"></div>
@@ -917,7 +1079,13 @@ function closeModalOutside(e) {
 
 function saveEdit() {
   const s = getStorage();
-  s.edits[currentCardId] = document.getElementById('editTextarea').value;
+  const newText = document.getElementById('editTextarea').value;
+  s.edits[currentCardId] = newText;
+  if (!s.editAuthors) s.editAuthors = {};
+  s.editAuthors[currentCardId] = {
+    name: getUserName() || 'Anónimo',
+    date: new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  };
   setStorage(s);
   const msg = document.getElementById('savedMsg');
   msg.style.opacity = '1';
@@ -940,6 +1108,7 @@ function renderComments(id) {
       <button class="delete-comment" onclick="deleteComment(${i})" title="Eliminar">×</button>
       <div class="comment-meta">
         <span class="comment-type ${c.type === 'suggestion' ? 'type-suggestion' : 'type-comment'}">${c.type === 'suggestion' ? 'Sugerencia' : 'Comentario'}</span>
+        <span class="author-tag">${c.author || 'Anónimo'}</span>
         <span class="comment-date">${c.date}</span>
       </div>
       <p class="comment-text">${c.text}</p>
@@ -962,6 +1131,7 @@ function submitComment() {
   s.comments[currentCardId].push({
     type: currentCommentType,
     text: text,
+    author: getUserName() || 'Anónimo',
     date: new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
   });
   setStorage(s);
@@ -984,6 +1154,7 @@ function switchTab(name) {
 
 renderCards('all');
 renderCalendar();
+initWelcome();
 </script>
 </body>
 </html>
