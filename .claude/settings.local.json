@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git config:*)"
+      "Bash(mkdir -p /tmp/prismic-backup)",
+      "Bash(cp \"C:/Users/joaqu/OneDrive/Escritorio/PrismicHub/\"* /tmp/prismic-backup/)",
+      "Bash(git clone:*)",
+      "Bash(cp:*)"
     ]
   }
 }
