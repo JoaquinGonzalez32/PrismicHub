@@ -1467,19 +1467,25 @@ async function openModal(id, focus) {
 
   // Pilar select
   const pilarSel = document.getElementById('modal-pilar-select');
-  pilarSel.innerHTML = Object.entries(PILARS).map(([key, p]) =>
+  const pilarExists = !!PILARS[piece.pilar];
+  const orphanOpt = pilarExists ? '' : `<option value="${escapeHtml(piece.pilar)}" selected>${escapeHtml(piece.pilar)} (no existe)</option>`;
+  pilarSel.innerHTML = orphanOpt + Object.entries(PILARS).map(([key, p]) =>
     `<option value="${key}"${key === piece.pilar ? ' selected' : ''}>${escapeHtml(p.label)}</option>`
   ).join('');
 
   // Channel select
   const chSel = document.getElementById('modal-channel-select');
-  chSel.innerHTML = CHANNELS_LIST.map(c =>
+  const chExists = CHANNELS_LIST.includes(piece.channel);
+  const chOrphan = chExists ? '' : `<option value="${escapeHtml(piece.channel)}" selected>${escapeHtml(piece.channel)} (no existe)</option>`;
+  chSel.innerHTML = chOrphan + CHANNELS_LIST.map(c =>
     `<option value="${escapeHtml(c)}"${c === piece.channel ? ' selected' : ''}>${escapeHtml(c)}</option>`
   ).join('');
 
   // Format select
   const fmtSel = document.getElementById('modal-format-select');
-  fmtSel.innerHTML = FORMATS_LIST.map(f =>
+  const fmtExists = FORMATS_LIST.includes(piece.format);
+  const fmtOrphan = fmtExists ? '' : `<option value="${escapeHtml(piece.format)}" selected>${escapeHtml(piece.format)} (no existe)</option>`;
+  fmtSel.innerHTML = fmtOrphan + FORMATS_LIST.map(f =>
     `<option value="${escapeHtml(f)}"${f === piece.format ? ' selected' : ''}>${escapeHtml(f)}</option>`
   ).join('');
 
