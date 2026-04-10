@@ -823,6 +823,52 @@ body::before {
 .card:nth-child(12) { animation-delay: 0.55s; }
 .card:nth-child(13) { animation-delay: 0.6s; }
 .card:nth-child(14) { animation-delay: 0.65s; }
+
+/* ─── New Idea Button ─── */
+.btn-new-idea {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 9px 20px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.btn-new-idea:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+/* ─── New Idea Modal ─── */
+.new-idea-form { display: flex; flex-direction: column; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color var(--transition);
+  outline: none;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus { border-color: var(--accent); }
+.form-group textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 </style>
 </head>
 <body>
@@ -834,10 +880,13 @@ body::before {
       <img src="logo-prismic.png" alt="Prismic Club" class="logo-img">
       <div class="logo-sub">hub del equipo</div>
     </div>
-    <nav class="nav-tabs">
-      <button class="nav-tab active" data-view="ideas">Ideas</button>
-      <button class="nav-tab" data-view="calendar">Calendario</button>
-    </nav>
+    <div style="display:flex;align-items:center;gap:12px">
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-view="ideas">Ideas</button>
+        <button class="nav-tab" data-view="calendar">Calendario</button>
+      </nav>
+      <button class="btn-new-idea" id="btn-new-idea">+ Nueva idea</button>
+    </div>
   </div>
 </header>
 
@@ -944,6 +993,63 @@ body::before {
           <button class="btn btn-primary" id="comment-submit">Enviar</button>
         </div>
         <div class="comment-list" id="comment-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ New Idea Modal ═══ -->
+<div class="modal-overlay" id="new-idea-overlay">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <span class="modal-section-label" style="padding:0;margin:0">Nueva idea de contenido</span>
+      <button class="modal-close" id="new-idea-close">&times;</button>
+    </div>
+    <div class="modal-content">
+      <div class="new-idea-form">
+        <div class="form-group">
+          <label>Título</label>
+          <input type="text" id="new-idea-title" placeholder="Nombre de la pieza de contenido">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Pilar</label>
+            <select id="new-idea-pilar"></select>
+          </div>
+          <div class="form-group">
+            <label>Canal</label>
+            <select id="new-idea-channel">
+              <option value="Instagram">Instagram</option>
+              <option value="TikTok">TikTok</option>
+              <option value="Website/Blog">Website / Blog</option>
+              <option value="Email">Email</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Formato</label>
+            <select id="new-idea-format">
+              <option value="Post">Post</option>
+              <option value="Carrusel">Carrusel</option>
+              <option value="Story">Story</option>
+              <option value="Video">Video</option>
+              <option value="UGC Repost">UGC Repost</option>
+              <option value="Artículo">Artículo</option>
+              <option value="Newsletter">Newsletter</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Copy</label>
+          <textarea id="new-idea-copy" placeholder="El texto / guión de la pieza..." style="min-height:120px"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Nota visual / producción (opcional)</label>
+          <textarea id="new-idea-note" placeholder="Indicaciones de diseño, foto, video..." style="min-height:70px"></textarea>
+        </div>
+        <div class="modal-save-row">
+          <button class="btn btn-outline" id="new-idea-cancel">Cancelar</button>
+          <button class="btn btn-primary" id="new-idea-save">Crear idea</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1522,7 +1628,61 @@ function stopVoice() {
   try { recognition.stop(); } catch(e) {}
 }
 
+/* ─── New Idea Modal ─── */
+function openNewIdeaModal() {
+  const pilarSelect = document.getElementById('new-idea-pilar');
+  pilarSelect.innerHTML = Object.entries(PILARS).map(([key, p]) =>
+    `<option value="${key}">${escapeHtml(p.label)}</option>`
+  ).join('');
+  document.getElementById('new-idea-title').value = '';
+  document.getElementById('new-idea-copy').value = '';
+  document.getElementById('new-idea-note').value = '';
+  const overlay = document.getElementById('new-idea-overlay');
+  overlay.classList.add('open');
+  overlay.classList.remove('closing');
+  setTimeout(() => document.getElementById('new-idea-title').focus(), 100);
+}
+
+function closeNewIdeaModal() {
+  const overlay = document.getElementById('new-idea-overlay');
+  overlay.classList.add('closing');
+  setTimeout(() => { overlay.classList.remove('open', 'closing'); }, 350);
+}
+
+async function saveNewIdea() {
+  const title = document.getElementById('new-idea-title').value.trim();
+  const pilar = document.getElementById('new-idea-pilar').value;
+  const channel = document.getElementById('new-idea-channel').value;
+  const format = document.getElementById('new-idea-format').value;
+  const copy = document.getElementById('new-idea-copy').value.trim();
+  const note = document.getElementById('new-idea-note').value.trim() || null;
+
+  if (!title || !copy) { alert('Completá al menos el título y el copy.'); return; }
+
+  const { data, error } = await sb.from('content_pieces')
+    .insert({ pilar, channel, format, title, copy, note })
+    .select()
+    .single();
+
+  if (error) { console.error('Error creating idea:', error); alert('Error al crear la idea.'); return; }
+
+  contentPieces.push(data);
+  renderGrid();
+  renderCalendar();
+  updateStats();
+  closeNewIdeaModal();
+}
+
 /* ─── Event Listeners ─── */
+// New idea
+document.getElementById('btn-new-idea').addEventListener('click', openNewIdeaModal);
+document.getElementById('new-idea-close').addEventListener('click', closeNewIdeaModal);
+document.getElementById('new-idea-cancel').addEventListener('click', closeNewIdeaModal);
+document.getElementById('new-idea-save').addEventListener('click', saveNewIdea);
+document.getElementById('new-idea-overlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeNewIdeaModal();
+});
+
 // View tabs
 document.querySelectorAll('.nav-tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -1572,6 +1732,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeModal();
     closePillarsModal();
+    closeNewIdeaModal();
   }
 });
 
