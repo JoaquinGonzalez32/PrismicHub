@@ -131,39 +131,6 @@ body::before {
   padding: 32px 40px 80px;
 }
 
-/* ─── Status Bar ─── */
-.status-bar {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  margin-bottom: 36px;
-  box-shadow: var(--shadow-sm);
-}
-.stat {
-  background: var(--surface);
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.stat-value {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 300;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-.stat-label {
-  font-size: 0.72rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--ink-muted);
-}
-
 /* ─── Filters ─── */
 .filters {
   display: flex;
@@ -1055,7 +1022,6 @@ body::before {
   .header-inner { padding: 0 20px; height: 60px; }
   .logo-sub { display: none; }
   .main { padding: 20px 20px 60px; }
-  .status-bar { grid-template-columns: repeat(2, 1fr); }
   .content-grid { grid-template-columns: 1fr; }
   .modal-content, .modal-header, .pillars-modal-content { padding-left: 20px; padding-right: 20px; }
   .modal-title { font-size: 1.4rem; }
@@ -1064,8 +1030,6 @@ body::before {
 @media (max-width: 500px) {
   .nav-tabs { gap: 0; }
   .nav-tab { padding: 6px 14px; font-size: 0.72rem; }
-  .stat { padding: 14px 16px; }
-  .stat-value { font-size: 1.5rem; }
   .filters { gap: 6px; }
   .filter-btn { padding: 6px 12px; font-size: 0.72rem; }
 }
@@ -1163,25 +1127,6 @@ body::before {
 
   <!-- ─── Ideas View ─── -->
   <section class="ideas-view active" id="view-ideas">
-
-    <div class="status-bar">
-      <div class="stat">
-        <div class="stat-value" id="stat-total">0</div>
-        <div class="stat-label">Piezas de contenido</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value" id="stat-edits">0</div>
-        <div class="stat-label">Ediciones del equipo</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value" id="stat-comments">0</div>
-        <div class="stat-label">Comentarios</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value" id="stat-pillars">0</div>
-        <div class="stat-label">Pilares de contenido</div>
-      </div>
-    </div>
 
     <div class="filters" id="filters-bar">
       <span class="filter-label">Filtrar</span>
@@ -1633,14 +1578,6 @@ function lightenColor(hex, amount = 0.85) {
   return `#${lr.toString(16).padStart(2,'0')}${lg.toString(16).padStart(2,'0')}${lb.toString(16).padStart(2,'0')}`;
 }
 
-/* ─── Stats ─── */
-function updateStats() {
-  document.getElementById('stat-total').textContent = contentPieces.length;
-  document.getElementById('stat-edits').textContent = editsCount;
-  document.getElementById('stat-comments').textContent = totalComments;
-  document.getElementById('stat-pillars').textContent = Object.keys(PILARS).length;
-}
-
 /* ─── Render Filters ─── */
 function renderFilters() {
   const bar = document.getElementById('filters-bar');
@@ -1998,7 +1935,6 @@ async function saveCopy() {
       await incrementEdits();
       renderGrid();
       renderCalendar();
-      updateStats();
     }
   }
   closeModal();
@@ -2013,7 +1949,6 @@ async function addComment() {
   if (comment) {
     input.value = '';
     totalComments++;
-    updateStats();
     const comments = await fetchCommentsForPiece(currentPieceId);
     renderComments(comments);
   }
@@ -2023,7 +1958,6 @@ async function deleteComment(commentId) {
   const ok = await removeComment(commentId);
   if (ok && currentPieceId) {
     totalComments = Math.max(0, totalComments - 1);
-    updateStats();
     const comments = await fetchCommentsForPiece(currentPieceId);
     renderComments(comments);
   }
@@ -2037,7 +1971,6 @@ async function deletePiece(id) {
   contentPieces = contentPieces.filter(c => c.id !== id);
   totalComments = await fetchTotalComments();
   renderGrid();
-  updateStats();
 }
 
 /* ─── Settings Modal (Pillars, Channels, Formats) ─── */
@@ -2183,7 +2116,6 @@ async function savePillars() {
   renderFilters();
   renderGrid();
   renderCalendar();
-  updateStats();
   closePillarsModal();
 }
 
@@ -2319,7 +2251,6 @@ async function saveNewIdea() {
   }
   renderGrid();
   renderCalendar();
-  updateStats();
   closeNewIdeaModal();
 }
 
@@ -2409,7 +2340,6 @@ document.addEventListener('keydown', e => {
   bindSortEvents();
   renderGrid();
   renderCalendar();
-  updateStats();
   initVoice();
 })();
 </script>
