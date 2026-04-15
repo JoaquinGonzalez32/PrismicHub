@@ -1186,12 +1186,12 @@ body::before {
           <div class="pilar-checklist" id="modal-pilar-checklist"></div>
         </div>
         <div class="form-group">
-          <label>Canal</label>
-          <select id="modal-channel-select" style="font-family:var(--font-body);font-size:0.88rem;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);width:100%;outline:none;"></select>
+          <label>Canal <span style="font-size:0.7rem;color:var(--ink-light);font-weight:400">(elegí uno o varios)</span></label>
+          <div class="pilar-checklist" id="modal-channel-checklist"></div>
         </div>
         <div class="form-group">
-          <label>Formato</label>
-          <select id="modal-format-select" style="font-family:var(--font-body);font-size:0.88rem;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);width:100%;outline:none;"></select>
+          <label>Formato <span style="font-size:0.7rem;color:var(--ink-light);font-weight:400">(elegí uno o varios)</span></label>
+          <div class="pilar-checklist" id="modal-format-checklist"></div>
         </div>
       </div>
 
@@ -1215,9 +1215,15 @@ body::before {
         <div class="modal-note" id="modal-note"></div>
       </div>
 
-      <div class="modal-section">
-        <div class="modal-section-label">Fecha programada</div>
-        <input type="date" id="modal-date" style="font-family:var(--font-body);font-size:0.88rem;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);outline:none;width:200px;">
+      <div class="modal-section" style="display:flex;gap:24px;flex-wrap:wrap">
+        <div>
+          <div class="modal-section-label">Fecha de publicación</div>
+          <input type="date" id="modal-date" style="font-family:var(--font-body);font-size:0.88rem;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);outline:none;width:200px;">
+        </div>
+        <div>
+          <div class="modal-section-label">Fecha de grabación</div>
+          <input type="date" id="modal-recording-date" style="font-family:var(--font-body);font-size:0.88rem;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);outline:none;width:200px;">
+        </div>
       </div>
 
       <div class="modal-save-row">
@@ -1260,12 +1266,12 @@ body::before {
             <div class="pilar-checklist" id="new-idea-pilar-checklist"></div>
           </div>
           <div class="form-group">
-            <label>Canal</label>
-            <select id="new-idea-channel"></select>
+            <label>Canal <span style="font-size:0.7rem;color:var(--ink-light);font-weight:400">(elegí uno o varios)</span></label>
+            <div class="pilar-checklist" id="new-idea-channel-checklist"></div>
           </div>
           <div class="form-group">
-            <label>Formato</label>
-            <select id="new-idea-format"></select>
+            <label>Formato <span style="font-size:0.7rem;color:var(--ink-light);font-weight:400">(elegí uno o varios)</span></label>
+            <div class="pilar-checklist" id="new-idea-format-checklist"></div>
           </div>
         </div>
         <div class="form-group">
@@ -1276,9 +1282,15 @@ body::before {
           <label>Nota visual / producción (opcional)</label>
           <textarea id="new-idea-note" placeholder="Indicaciones de diseño, foto, video..." style="min-height:70px"></textarea>
         </div>
-        <div class="form-group">
-          <label>Fecha programada (opcional)</label>
-          <input type="date" id="new-idea-date" style="width:200px">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha de publicación (opcional)</label>
+            <input type="date" id="new-idea-date" style="width:200px">
+          </div>
+          <div class="form-group">
+            <label>Fecha de grabación (opcional)</label>
+            <input type="date" id="new-idea-recording-date" style="width:200px">
+          </div>
         </div>
         <div class="modal-save-row">
           <button class="btn btn-outline" id="new-idea-cancel">Cancelar</button>
@@ -1498,6 +1510,38 @@ function getPilarChecklistValue(containerId) {
   return Array.from(boxes).map(b => b.value).join(',');
 }
 
+// Checklist genérico (sin color/key) para canales y formatos.
+function buildSimpleChecklistHtml(items, selectedList = []) {
+  const selected = new Set(selectedList);
+  const itemSet = new Set(items);
+  const orphanKeys = selectedList.filter(v => !itemSet.has(v));
+  const orphanHtml = orphanKeys.map(v => `
+    <label class="pilar-check-item orphan">
+      <input type="checkbox" value="${escapeHtml(v)}" checked>
+      <span class="pilar-check-label">${escapeHtml(v)} <em style="font-style:italic;color:var(--ink-light)">(no existe)</em></span>
+    </label>`).join('');
+  const itemsHtml = items.map(v => `
+    <label class="pilar-check-item">
+      <input type="checkbox" value="${escapeHtml(v)}"${selected.has(v) ? ' checked' : ''}>
+      <span class="pilar-check-label">${escapeHtml(v)}</span>
+    </label>`).join('');
+  return orphanHtml + itemsHtml;
+}
+
+// Parseo genérico de lista separada por coma (canales/formatos).
+function parseList(val) {
+  if (!val) return [];
+  return String(val).split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function listMatches(val, filter) {
+  return parseList(val).includes(filter);
+}
+
+function listDisplay(val) {
+  return parseList(val).join(' · ');
+}
+
 function formatShortDate(iso) {
   if (!iso) return '';
   const d = new Date(iso + (iso.length === 10 ? 'T12:00:00' : ''));
@@ -1653,8 +1697,8 @@ function renderCardHtml(piece, i) {
       <div class="card-body">
         <div class="card-meta">
           <span class="card-tags">${tags}</span>
-          <span class="card-channel">${escapeHtml(piece.channel)}</span>
-          <span class="card-format">· ${escapeHtml(piece.format)}</span>
+          <span class="card-channel">${escapeHtml(listDisplay(piece.channel))}</span>
+          <span class="card-format">· ${escapeHtml(listDisplay(piece.format))}</span>
           ${dateEl}
         </div>
         <h3 class="card-title">${escapeHtml(piece.title)}</h3>
@@ -1772,14 +1816,19 @@ function renderCalendar() {
     `<th>${escapeHtml(c)}</th>`).join('')}</tr>`;
 
   const weeks = getMonthWeeks(calendarYear, calendarMonth);
-  const scheduled = contentPieces.filter(p => p.scheduled_date);
+  // Una pieza puede aparecer dos veces: por fecha de publicación y/o de grabación.
+  const entries = [];
+  contentPieces.forEach(p => {
+    if (p.scheduled_date) entries.push({ piece: p, date: p.scheduled_date, kind: 'pub' });
+    if (p.recording_date) entries.push({ piece: p, date: p.recording_date, kind: 'rec' });
+  });
 
   const tbody = document.getElementById('calendar-body');
   tbody.innerHTML = weeks.map((week, i) => {
     const cells = CHANNELS_LIST.map(ch => {
-      const items = scheduled.filter(p => {
-        const d = new Date(p.scheduled_date + 'T12:00:00');
-        return p.channel === ch && d >= week.start && d <= week.end;
+      const items = entries.filter(e => {
+        const d = new Date(e.date + 'T12:00:00');
+        return listMatches(e.piece.channel, ch) && d >= week.start && d <= week.end;
       });
       return renderCalCell(items);
     });
@@ -1796,20 +1845,21 @@ function renderCalendar() {
 function renderCalCell(items) {
   if (!items.length) return '<span class="empty-cell">—</span>';
   // Orden interno: por fecha ascendente
-  const sorted = items.slice().sort((a, b) =>
-    (a.scheduled_date || '').localeCompare(b.scheduled_date || ''));
-  return sorted.map(it => {
+  const sorted = items.slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  return sorted.map(e => {
+    const it = e.piece;
     const { bg } = pilarDisplay(it.pilar);
     const color = pilarPrimaryColor(it.pilar);
     const tags = pilarTagsHtml(it.pilar);
-    const dateStr = formatShortDate(it.scheduled_date);
+    const dateStr = formatShortDate(e.date);
+    const titleText = e.kind === 'rec' ? `Grabación de ${it.title}` : it.title;
     return `
     <div class="cal-item" style="background:${bg};border-left-color:${color}" onclick="openModal(${it.id}, 'edit')">
       <div class="cal-item-head">
         <span class="cal-item-tags">${tags}</span>
         ${dateStr ? `<span class="cal-item-date">${escapeHtml(dateStr)}</span>` : ''}
       </div>
-      <div class="cal-item-title">${escapeHtml(it.title)}</div>
+      <div class="cal-item-title">${escapeHtml(titleText)}</div>
     </div>`;
   }).join('');
 }
@@ -1833,24 +1883,17 @@ async function openModal(id, focus) {
   const pieceKeys = parsePilars(piece.pilar);
   document.getElementById('modal-pilar-checklist').innerHTML = buildPilarChecklistHtml(pieceKeys);
 
-  // Channel select
-  const chSel = document.getElementById('modal-channel-select');
-  const chExists = CHANNELS_LIST.includes(piece.channel);
-  const chOrphan = chExists ? '' : `<option value="${escapeHtml(piece.channel)}" selected>${escapeHtml(piece.channel)} (no existe)</option>`;
-  chSel.innerHTML = chOrphan + CHANNELS_LIST.map(c =>
-    `<option value="${escapeHtml(c)}"${c === piece.channel ? ' selected' : ''}>${escapeHtml(c)}</option>`
-  ).join('');
+  // Channel multi-select (checkboxes)
+  document.getElementById('modal-channel-checklist').innerHTML =
+    buildSimpleChecklistHtml(CHANNELS_LIST, parseList(piece.channel));
 
-  // Format select
-  const fmtSel = document.getElementById('modal-format-select');
-  const fmtExists = FORMATS_LIST.includes(piece.format);
-  const fmtOrphan = fmtExists ? '' : `<option value="${escapeHtml(piece.format)}" selected>${escapeHtml(piece.format)} (no existe)</option>`;
-  fmtSel.innerHTML = fmtOrphan + FORMATS_LIST.map(f =>
-    `<option value="${escapeHtml(f)}"${f === piece.format ? ' selected' : ''}>${escapeHtml(f)}</option>`
-  ).join('');
+  // Format multi-select (checkboxes)
+  document.getElementById('modal-format-checklist').innerHTML =
+    buildSimpleChecklistHtml(FORMATS_LIST, parseList(piece.format));
 
   document.getElementById('modal-copy').value = piece.copy;
   document.getElementById('modal-date').value = piece.scheduled_date || '';
+  document.getElementById('modal-recording-date').value = piece.recording_date || '';
 
   const noteSection = document.getElementById('modal-note-section');
   if (piece.note) {
@@ -1911,13 +1954,16 @@ async function saveCopy() {
   const piece = getPiece(currentPieceId);
   const newTitle = document.getElementById('modal-title-input').value.trim();
   const newPilar = getPilarChecklistValue('modal-pilar-checklist');
-  const newChannel = document.getElementById('modal-channel-select').value;
-  const newFormat = document.getElementById('modal-format-select').value;
+  const newChannel = getPilarChecklistValue('modal-channel-checklist');
+  const newFormat = getPilarChecklistValue('modal-format-checklist');
   const newCopy = document.getElementById('modal-copy').value;
   const newDate = document.getElementById('modal-date').value || null;
+  const newRecordingDate = document.getElementById('modal-recording-date').value || null;
 
   if (!newTitle) { alert('El título no puede estar vacío.'); return; }
   if (!newPilar) { alert('Seleccioná al menos un pilar.'); return; }
+  if (!newChannel) { alert('Seleccioná al menos un canal.'); return; }
+  if (!newFormat) { alert('Seleccioná al menos un formato.'); return; }
 
   const updates = {};
   if (newTitle !== piece.title) updates.title = newTitle;
@@ -1926,6 +1972,7 @@ async function saveCopy() {
   if (newFormat !== piece.format) updates.format = newFormat;
   if (newCopy !== piece.copy) updates.copy = newCopy;
   if (newDate !== (piece.scheduled_date || null)) updates.scheduled_date = newDate;
+  if (newRecordingDate !== (piece.recording_date || null)) updates.recording_date = newRecordingDate;
 
   if (Object.keys(updates).length) {
     updates.updated_at = new Date().toISOString();
@@ -2192,22 +2239,19 @@ function stopVoice() {
 
 /* ─── New Idea Modal ─── */
 function openNewIdeaModal() {
-  // Preselecciona el primer pilar por conveniencia
+  // Preselecciona el primer pilar/canal/formato por conveniencia
   const firstKey = Object.keys(PILARS)[0];
   document.getElementById('new-idea-pilar-checklist').innerHTML =
     buildPilarChecklistHtml(firstKey ? [firstKey] : []);
-  const channelSelect = document.getElementById('new-idea-channel');
-  channelSelect.innerHTML = CHANNELS_LIST.map(c =>
-    `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
-  ).join('');
-  const formatSelect = document.getElementById('new-idea-format');
-  formatSelect.innerHTML = FORMATS_LIST.map(f =>
-    `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`
-  ).join('');
+  document.getElementById('new-idea-channel-checklist').innerHTML =
+    buildSimpleChecklistHtml(CHANNELS_LIST, CHANNELS_LIST[0] ? [CHANNELS_LIST[0]] : []);
+  document.getElementById('new-idea-format-checklist').innerHTML =
+    buildSimpleChecklistHtml(FORMATS_LIST, FORMATS_LIST[0] ? [FORMATS_LIST[0]] : []);
   document.getElementById('new-idea-title').value = '';
   document.getElementById('new-idea-copy').value = '';
   document.getElementById('new-idea-note').value = '';
   document.getElementById('new-idea-date').value = '';
+  document.getElementById('new-idea-recording-date').value = '';
   const overlay = document.getElementById('new-idea-overlay');
   overlay.classList.add('open');
   overlay.classList.remove('closing');
@@ -2223,27 +2267,31 @@ function closeNewIdeaModal() {
 async function saveNewIdea() {
   const title = document.getElementById('new-idea-title').value.trim();
   const pilar = getPilarChecklistValue('new-idea-pilar-checklist');
-  const channel = document.getElementById('new-idea-channel').value;
-  const format = document.getElementById('new-idea-format').value;
+  const channel = getPilarChecklistValue('new-idea-channel-checklist');
+  const format = getPilarChecklistValue('new-idea-format-checklist');
   const copy = document.getElementById('new-idea-copy').value.trim();
   const note = document.getElementById('new-idea-note').value.trim() || null;
   const scheduled_date = document.getElementById('new-idea-date').value || null;
+  const recording_date = document.getElementById('new-idea-recording-date').value || null;
 
   if (!title || !copy) { alert('Completá al menos el título y el copy.'); return; }
   if (!pilar) { alert('Seleccioná al menos un pilar.'); return; }
+  if (!channel) { alert('Seleccioná al menos un canal.'); return; }
+  if (!format) { alert('Seleccioná al menos un formato.'); return; }
 
   const { data, error } = await sb.from('content_pieces')
-    .insert({ pilar, channel, format, title, copy, note, scheduled_date })
+    .insert({ pilar, channel, format, title, copy, note, scheduled_date, recording_date })
     .select()
     .single();
 
   if (error) { console.error('Error creating idea:', error); alert('Error al crear la idea.'); return; }
 
   contentPieces.push(data);
-  // Si la idea tiene fecha programada, saltar el calendario a ese mes
+  // Si la idea tiene fecha (publicación o grabación), saltar el calendario a ese mes
   // para que el usuario la vea aunque esté en otro mes distinto al actual.
-  if (data.scheduled_date) {
-    const d = new Date(data.scheduled_date + 'T12:00:00');
+  const jumpTo = data.scheduled_date || data.recording_date;
+  if (jumpTo) {
+    const d = new Date(jumpTo + 'T12:00:00');
     if (!isNaN(d)) {
       calendarYear = d.getFullYear();
       calendarMonth = d.getMonth();

@@ -10,6 +10,7 @@ CREATE TABLE content_pieces (
   copy TEXT NOT NULL,
   note TEXT,
   scheduled_date DATE,
+  recording_date DATE,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
